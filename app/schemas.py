@@ -31,12 +31,16 @@ class BiodataCreate(BiodataBase):
 
 #determines the type of information received about a loan
 class LoanBase(BaseModel):
-    loan_holder: str
     loan_principle: int
     loan_interest_rate: int
-    loan_period: str
     loan_interest: int
     loan_payable: int
+    loan_balance: int
+    loan_period: str
+    expiry_date: str
+    user_id: int
+    running: bool
+
 
 
 class LoanCreate(LoanBase):
