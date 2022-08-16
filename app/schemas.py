@@ -4,17 +4,6 @@ from typing import Optional
 from pydantic.types import conint
 
 
-#determines the type of information received about a post
-class PostBase(BaseModel):
-    title: str
-    content: str
-    published: bool = True
-
-
-class PostCreate(PostBase):
-    pass
-
-
 #determines the type of information received about a customer
 class BiodataBase(BaseModel):
     first_name: str
@@ -64,26 +53,6 @@ class UserOut(BaseModel):
         orm_mode = True
 
 
-#determines the type of information sent back about a post
-class Post(PostBase):
-    id: int
-    created_at: datetime
-    user_id: int
-    owner: UserOut
-
-    class Config:
-        orm_mode = True
-
-
-# also determines the type of information sent back about a post
-class PostOut(PostBase):
-    Post: Post
-    votes: int
-
-    class Config:
-        orm_mode = True
-
-
 #determines the type of information sent back about a customer
 class Biodata(BiodataBase):
     id: int
@@ -115,6 +84,8 @@ class LoanBalance(BaseModel):
 class UserCreate(BaseModel):
     phone_number: int
     password: str
+    first_name: str
+    last_name: str
 
 
 
@@ -195,6 +166,4 @@ class TokenData(BaseModel):
     id: Optional[str] = None
 
 
-class Vote(BaseModel):
-    post_id: int
-    dir: conint(le=1)
+

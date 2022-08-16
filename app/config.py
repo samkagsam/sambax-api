@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     secret_key: str
     algorithm: str
     access_token_expire_minutes: int
+    box_uganda_username: str
+    box_uganda_password: str
 
     class Config:
         env_file =".env"

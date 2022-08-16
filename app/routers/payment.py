@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from .. import models, schemas, utils, oauth2
 from ..database import engine, get_db
 from typing import Optional, List
+import requests
+from ..config import settings
 
 
 router = APIRouter(
@@ -27,6 +29,7 @@ def get_my_payments(db: Session = Depends(get_db), current_user: int = Depends(o
 #creating a payment
 @router.post("/payments", status_code=status.HTTP_201_CREATED, response_model=schemas.PaymentCreate)
 def create_payment(payment: schemas.Payment, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+
     #check whether user has a running loan
     current_loan = db.query(models.Loan).filter(models.Loan.user_id == current_user.id, models.Loan.running == True).first()
 
@@ -34,6 +37,10 @@ def create_payment(payment: schemas.Payment, db: Session = Depends(get_db), curr
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"you have no active loan to pay for")
 
     #add logic for collecting payment from a user
+    appendage = '256'
+    number_string = str(current_user.phone_number)
+    usable_phone_number_string = appendage + number_string
+    usable_phone_number = int(usable_phone_number_string)
 
     #register payment
     new_payment = models.Payment(user_id=current_user.id, loan_id=current_loan.id, **payment.dict())
@@ -59,6 +66,16 @@ def create_payment(payment: schemas.Payment, db: Session = Depends(get_db), curr
     loan_query.update(thisdict, synchronize_session=False)
     db.commit()
 
+    #send message to user about balance update
+    #lets connect to box-uganda for messaging
+    url = "https://boxuganda.com/api.php"
+    data = {'user': f'{settings.box_uganda_username}', 'password': f'{settings.box_uganda_password}', 'sender': 'sambax',
+            'message': f'Hello {current_user.first_name}, you have paid Sambax Finance UgX{received_payment}.Your loan balance UgX{new_loan_balance}. your loan expiry date is {current_loan.expiry_date}',
+            'reciever': f'{usable_phone_number}'}
+    headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+    test_response = requests.post(url, data=data, headers=headers)
+    if test_response.status_code == 200:
+        print("message success")
 
     return new_payment
 

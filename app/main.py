@@ -12,7 +12,7 @@ import time
 from . import models, schemas, utils
 from .database import engine, get_db
 from sqlalchemy.orm import Session
-from .routers import post, user, biodata, loan, application, payment, auth, vote
+from .routers import user, biodata, loan, application, payment, auth
 from .config import Settings
 
 
@@ -36,14 +36,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(post.router)
+
 app.include_router(user.router)
 app.include_router(biodata.router)
 app.include_router(loan.router)
 app.include_router(application.router)
 app.include_router(payment.router)
 app.include_router(auth.router)
-app.include_router(vote.router)
+
 
 
 @app.get("/")
