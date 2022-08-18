@@ -7,7 +7,7 @@ from typing import Optional, List
 
 
 router = APIRouter(
-    tags=["Authentication"]
+    tags=[" User Authentication"]
 )
 
 

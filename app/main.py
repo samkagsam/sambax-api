@@ -12,7 +12,7 @@ import time
 from . import models, schemas, utils
 from .database import engine, get_db
 from sqlalchemy.orm import Session
-from .routers import user, biodata, loan, application, payment, auth
+from .routers import user, biodata, loan, application, payment, auth, admin_auth
 from .config import Settings
 
 
@@ -43,6 +43,7 @@ app.include_router(loan.router)
 app.include_router(application.router)
 app.include_router(payment.router)
 app.include_router(auth.router)
+app.include_router(admin_auth.router)
 
 
 

@@ -39,7 +39,7 @@ class LoanBase(BaseModel):
     loan_period: str
     expiry_date: str
     user_id: int
-    running: bool
+
 
 
 

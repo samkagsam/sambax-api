@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
 from sqlalchemy.orm import Session
-from .. import models, schemas, utils
+from .. import models, schemas, utils, admin_oauth2
 from ..database import engine, get_db
 from typing import Optional, List
 
@@ -11,16 +11,16 @@ router = APIRouter(
 
 
 #get all biodata
-@router.get("/biodata", response_model=List[schemas.Biodata])
-def get_all_biodata(db: Session = Depends(get_db)):
+@router.get("/admin/biodata", response_model=List[schemas.Biodata])
+def get_all_biodata(db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
 
     biodata = db.query(models.Biodata).all()
     return biodata
 
 
 #create biodata
-@router.post("/biodata", status_code=status.HTTP_201_CREATED, response_model=schemas.Biodata)
-def create_biodata(biodata: schemas.BiodataCreate, db: Session = Depends(get_db)):
+@router.post("/admin/biodata", status_code=status.HTTP_201_CREATED, response_model=schemas.Biodata)
+def create_biodata(biodata: schemas.BiodataCreate, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
 
     new_biodata = models.Biodata(**biodata.dict())
     db.add(new_biodata)
@@ -31,8 +31,8 @@ def create_biodata(biodata: schemas.BiodataCreate, db: Session = Depends(get_db)
 
 
 #getting a single biodata profile
-@router.get("/biodata/{id}", response_model=schemas.Biodata)
-def get_biodata(id: int, db: Session = Depends(get_db)):
+@router.get("/admin/biodata/{id}", response_model=schemas.Biodata)
+def get_biodata(id: int, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
 
     biodata = db.query(models.Biodata).filter(models.Biodata.id == id).first()
     if not biodata:
@@ -42,8 +42,8 @@ def get_biodata(id: int, db: Session = Depends(get_db)):
 
 
 #updating biodata
-@router.put("/biodata/{id}", response_model=schemas.Biodata)
-def update_biodata(id: int, biodata:schemas.BiodataCreate, db: Session = Depends(get_db)):
+@router.put("/admin/biodata/{id}", response_model=schemas.Biodata)
+def update_biodata(id: int, biodata:schemas.BiodataCreate, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
     biodata_query = db.query(models.Biodata).filter(models.Biodata.id == id)
     biodata_item = biodata_query.first()
 
@@ -56,8 +56,8 @@ def update_biodata(id: int, biodata:schemas.BiodataCreate, db: Session = Depends
 
 
 #deleting a single biodata
-@router.delete("/biodata/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_biodata(id: int, db: Session = Depends(get_db)):
+@router.delete("/admin/biodata/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_biodata(id: int, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
 
     biodata = db.query(models.Biodata).filter(models.Biodata.id == id)
     if biodata.first() == None:

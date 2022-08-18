@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
 from sqlalchemy.orm import Session
-from .. import models, schemas, utils, oauth2
+from .. import models, schemas, utils, oauth2, admin_oauth2
 from ..database import engine, get_db
 from typing import Optional, List
 import requests
@@ -13,8 +13,8 @@ router = APIRouter(
 
 
 #getting all payments, used by admin
-@router.get("/payments", response_model=List[schemas.PaymentOut])
-def get_payments(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+@router.get("/admin/payments", response_model=List[schemas.PaymentOut])
+def get_payments(db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
     payments = db.query(models.Payment).all()
     return payments
 
@@ -35,6 +35,12 @@ def create_payment(payment: schemas.Payment, db: Session = Depends(get_db), curr
 
     if not current_loan:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"you have no active loan to pay for")
+
+    #let us not deduct more money than the loan current loan balance
+    money_to_pay_dict = payment.dict()
+    money_to_pay = money_to_pay_dict["amount"]
+    if money_to_pay > current_loan.loan_balance:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"the amount you are trying to pay is more than your loan balance")
 
     #add logic for collecting payment from a user
     appendage = '256'
@@ -66,6 +72,19 @@ def create_payment(payment: schemas.Payment, db: Session = Depends(get_db), curr
     loan_query.update(thisdict, synchronize_session=False)
     db.commit()
 
+    #turn off the loan if the loan balance of the current user is zero
+    loan_off_query = db.query(models.Loan).filter(models.Loan.user_id == current_user.id, models.Loan.running == True, models.Loan.loan_balance == 0)
+    loan_for_turn_off = loan_off_query.first()
+    if loan_for_turn_off is not None:
+        loan_off_dict = {
+            "running": False
+        }
+        loan_off_query.update(loan_off_dict, synchronize_session=False)
+        db.commit()
+
+
+
+
     #send message to user about balance update
     #lets connect to box-uganda for messaging
     url = "https://boxuganda.com/api.php"
@@ -80,9 +99,9 @@ def create_payment(payment: schemas.Payment, db: Session = Depends(get_db), curr
     return new_payment
 
 
-#get one payment
-@router.get("/payments/{id}", response_model=schemas.PaymentOut)
-def get_payment(id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+#get one payment by admin
+@router.get("/admin/payments/{id}", response_model=schemas.PaymentOut)
+def get_payment(id: int, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
     payment = db.query(models.Payment).filter(models.Payment.id == id).first()
     if not payment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"payment with id{id} was not found")
@@ -90,9 +109,9 @@ def get_payment(id: int, db: Session = Depends(get_db), current_user: int = Depe
     return payment
 
 
-#deleting a single payment
-@router.delete("/payments/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_payment(id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+#deleting a single payment by admin
+@router.delete("/admin/payments/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_payment(id: int, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
 
     payment = db.query(models.Payment).filter(models.Payment.id == id)
     if payment.first() == None:
@@ -103,9 +122,9 @@ def delete_payment(id: int, db: Session = Depends(get_db), current_user: int = D
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-#updating a single payment
-@router.put("/payments/{id}", response_model=schemas.PaymentOut)
-def update_payment(id: int, payment: schemas.Payment, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+#updating a single payment by admin
+@router.put("/admin/payments/{id}", response_model=schemas.PaymentOut)
+def update_payment(id: int, payment: schemas.Payment, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
 
     payment_query = db.query(models.Payment).filter(models.Payment.id == id)
     payment_item = payment_query.first()

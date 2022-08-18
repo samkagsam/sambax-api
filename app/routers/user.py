@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
 from sqlalchemy.orm import Session
-from .. import models, schemas, utils
+from .. import models, schemas, utils, admin_oauth2
 from ..database import engine, get_db
 from typing import Optional, List, Union
 from pydantic import BaseModel, HttpUrl
@@ -37,8 +37,8 @@ def create_user(user:schemas.UserCreate, db: Session = Depends(get_db)):
 
 
 #get one user
-@router.get("/users/{id}", response_model=schemas.UserOut)
-def get_user(id: int, db: Session = Depends(get_db)):
+@router.get("/main/users/{id}", response_model=schemas.UserOut)
+def get_user(id: int, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
     user = db.query(models.User).filter(models.User.id == id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"user with id{id} was not found")

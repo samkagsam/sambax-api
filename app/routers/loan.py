@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
 from sqlalchemy.orm import Session
-from .. import models, schemas, utils, oauth2
+from .. import models, schemas, utils, oauth2, admin_oauth2
 from ..database import engine, get_db
 from typing import Optional, List
 
@@ -11,16 +11,16 @@ router = APIRouter(
 
 
 
-#getting all loans
-@router.get("/loans", response_model=List[schemas.Loan])
-def get_loans(db: Session = Depends(get_db)):
+#getting all loans by admin
+@router.get("/admin/loans", response_model=List[schemas.Loan])
+def get_loans(db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
     loans = db.query(models.Loan).all()
     return loans
 
 
 #getting a single loan
-@router.get("/loans/{id}", response_model=schemas.Loan)
-def get_loan(id: int, db: Session = Depends(get_db)):
+@router.get("/admin/loans/{id}", response_model=schemas.Loan)
+def get_loan(id: int, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
 
     loan = db.query(models.Loan).filter(models.Loan.id == id).first()
     if not loan:
@@ -30,9 +30,13 @@ def get_loan(id: int, db: Session = Depends(get_db)):
 
 
 #creating a single loan
-@router.post("/loans", status_code=status.HTTP_201_CREATED, response_model=schemas.Loan)
-def create_loan(loan: schemas.LoanCreate, db: Session = Depends(get_db)):
+@router.post("/admin/loans", status_code=status.HTTP_201_CREATED, response_model=schemas.Loan)
+def create_loan(loan: schemas.LoanCreate, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
+    #check whether user has a running loan
+    current_loan = db.query(models.Loan).filter(models.Loan.user_id == loan.user_id, models.Loan.running == True).first()
 
+    if current_loan:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"user already has a running loan. you can't create a new loan for them")
     new_loan = models.Loan(**loan.dict())
     db.add(new_loan)
     db.commit()
@@ -41,8 +45,8 @@ def create_loan(loan: schemas.LoanCreate, db: Session = Depends(get_db)):
 
 
 #deleting a single loan
-@router.delete("/loans/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_loan(id: int, db: Session = Depends(get_db)):
+@router.delete("/admin/loans/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_loan(id: int, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
 
     loan = db.query(models.Loan).filter(models.Loan.id == id)
     if loan.first() == None:
@@ -54,8 +58,8 @@ def delete_loan(id: int, db: Session = Depends(get_db)):
 
 
 #updating a single loan
-@router.put("/loans/{id}", response_model=schemas.Loan)
-def update_loan(id: int, loan: schemas.LoanCreate, db: Session = Depends(get_db)):
+@router.put("/admin/loans/{id}", response_model=schemas.Loan)
+def update_loan(id: int, loan: schemas.LoanCreate, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
 
     loan_query = db.query(models.Loan).filter(models.Loan.id == id)
     loan_item = loan_query.first()

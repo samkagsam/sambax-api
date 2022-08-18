@@ -21,7 +21,7 @@ class Loan(Base):
     loan_period = Column(String, nullable=False)
     expiry_date = Column(String, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    running = Column(Boolean, server_default="False", nullable=False)
+    running = Column(Boolean, server_default="False", nullable=True)
 
 
 
@@ -103,4 +103,13 @@ class Payment(Base):
     owner = relationship("Loan")
 
 
+class Admin(Base):
+    __tablename__ = "admins"
 
+    id = Column(Integer, primary_key=True, nullable=False)
+    phone_number = Column(Integer, nullable=False, unique=True)
+    password = Column(String, nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    first_name = Column(String, nullable=False)
+    last_name = Column(String, nullable=False)
+    email = Column(String, nullable=False)
