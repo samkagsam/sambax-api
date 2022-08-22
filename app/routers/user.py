@@ -37,7 +37,7 @@ def create_user(user:schemas.UserCreate, db: Session = Depends(get_db)):
 
 
 #get one user
-@router.get("/main/users/{id}", response_model=schemas.UserOut)
+@router.get("/admin/users/{id}", response_model=schemas.UserOut)
 def get_user(id: int, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
     user = db.query(models.User).filter(models.User.id == id).first()
     if not user:

@@ -29,6 +29,15 @@ class BiodataCreate(BiodataBase):
     pass
 
 
+#determines the type of information sent back about a customer
+class Biodata(BiodataBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
 #determines the type of information received about a loan
 class LoanBase(BaseModel):
     loan_principle: int
@@ -45,25 +54,6 @@ class LoanBase(BaseModel):
 
 class LoanCreate(LoanBase):
     pass
-
-
-#determines the format of information sent back to a user after registration
-class UserOut(BaseModel):
-    id: int
-    phone_number: int
-    created_at: datetime
-
-    class Config:
-        orm_mode = True
-
-
-#determines the type of information sent back about a customer
-class Biodata(BiodataBase):
-    id: int
-    created_at: datetime
-
-    class Config:
-        orm_mode = True
 
 
 #determines the type of information sent back about a loan
@@ -84,6 +74,12 @@ class LoanBalance(BaseModel):
         orm_mode = True
 
 
+#determines the type of information received from an admin about loan maturity, it's the number of days
+class LoanMaturity(BaseModel):
+    sought_maturity: int
+
+
+
 #determines the type of information received to create a user
 class UserCreate(BaseModel):
     phone_number: int
@@ -91,6 +87,15 @@ class UserCreate(BaseModel):
     first_name: str
     last_name: str
 
+
+#determines the format of information sent back to a user after registration
+class UserOut(BaseModel):
+    id: int
+    phone_number: int
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
 
 
 
@@ -133,6 +138,13 @@ class ApplicationOut(BaseModel):
 class Payment(BaseModel):
 
     amount: int
+
+
+#determines the format of payment information entered by admin about a user
+class AdminPayment(BaseModel):
+
+    amount: int
+    phone_number: int
 
 
 #determines the format of information sent back to a user after making payment

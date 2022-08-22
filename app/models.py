@@ -17,7 +17,7 @@ class Loan(Base):
     loan_interest = Column(Integer, nullable=False)
     loan_payable = Column(Integer, nullable=False)
     loan_balance = Column(Integer, nullable=False)
-    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
     loan_period = Column(String, nullable=False)
     expiry_date = Column(String, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)

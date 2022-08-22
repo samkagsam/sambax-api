@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from .. import models, schemas, utils, oauth2, admin_oauth2
 from ..database import engine, get_db
 from typing import Optional, List
+from datetime import datetime
 
 
 router = APIRouter(
@@ -84,3 +85,32 @@ def get_loan_balance( db: Session = Depends(get_db), current_user: int = Depends
     expiry_date = current_loan.expiry_date
 
     return loan_balance, expiry_date
+
+
+###############################
+#getting loan maturity by admin
+@router.post("/admin/loan_maturity")
+def get_loan_maturity(given_maturity:schemas.LoanMaturity, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
+
+    rvalues = []
+
+    loans = db.query(models.Loan).filter(models.Loan.running == True).all()
+    for loan in loans:
+        format_string = "%Y-%m-%d %H:%M:%S.%f"
+        create_date_string = str(loan.created_at)
+        create_date = datetime.strptime(create_date_string, format_string)
+        now_string = str(datetime.now())
+        now = datetime.strptime(now_string, format_string)
+        maturity_object = now-create_date
+        loan_maturity = maturity_object.days
+
+        if loan_maturity == given_maturity.sought_maturity :
+
+            #rvalues.append(loan.user_id)
+            user = db.query(models.User).filter(models.User.id == loan.user_id).first()
+            user_details = [user.first_name, user.last_name, user.phone_number, loan.loan_balance ]
+            rvalues.append(user_details)
+
+
+    return rvalues
+#######################################################

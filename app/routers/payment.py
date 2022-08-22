@@ -28,7 +28,7 @@ def get_my_payments(db: Session = Depends(get_db), current_user: int = Depends(o
 
 #creating a payment
 @router.post("/payments", status_code=status.HTTP_201_CREATED, response_model=schemas.PaymentCreate)
-def create_payment(payment: schemas.Payment, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+def create_payment_by_user(payment: schemas.Payment, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
 
     #check whether user has a running loan
     current_loan = db.query(models.Loan).filter(models.Loan.user_id == current_user.id, models.Loan.running == True).first()
@@ -135,3 +135,76 @@ def update_payment(id: int, payment: schemas.Payment, db: Session = Depends(get_
     db.commit()
     return payment_query.first()
 
+
+#creating a payment by admin
+@router.post("/admin/payments", status_code=status.HTTP_201_CREATED, response_model=schemas.PaymentCreate)
+def create_payment_by_admin(payment: schemas.AdminPayment, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
+    #find the user
+    current_user = db.query(models.User).filter(models.User.phone_number == payment.phone_number).first()
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"user with that phone number was not found")
+
+    #check whether user has a running loan
+    current_loan = db.query(models.Loan).filter(models.Loan.user_id == current_user.id, models.Loan.running == True).first()
+
+    if not current_loan:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"user has no active loan to pay for")
+
+    #let us not deduct more money than the loan current loan balance
+    money_to_pay_dict = payment.dict()
+    money_to_pay = money_to_pay_dict["amount"]
+    if money_to_pay > current_loan.loan_balance:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"the amount you are trying to pay is more than the users loan balance")
+
+    #add logic for collecting payment from a user
+    appendage = '256'
+    number_string = str(current_user.phone_number)
+    usable_phone_number_string = appendage + number_string
+    usable_phone_number = int(usable_phone_number_string)
+
+    #register payment
+    new_payment = models.Payment(user_id=current_user.id, loan_id=current_loan.id, amount=payment.amount)
+    db.add(new_payment)
+    db.commit()
+    db.refresh(new_payment)
+
+    #get new loan balance
+    paymentdict = payment.dict()
+    received_payment = paymentdict["amount"]
+    new_loan_balance = current_loan.loan_balance - received_payment
+
+    # use a random dictionary to update the loan balance
+    thisdict = {
+
+        "loan_balance": 1964
+    }
+
+    thisdict["loan_balance"] = new_loan_balance
+
+    #update the loan balance of the user
+    loan_query = db.query(models.Loan).filter(models.Loan.user_id == current_user.id, models.Loan.running == True)
+    loan_query.update(thisdict, synchronize_session=False)
+    db.commit()
+
+    #turn off the loan if the loan balance of the current user is zero
+    loan_off_query = db.query(models.Loan).filter(models.Loan.user_id == current_user.id, models.Loan.running == True, models.Loan.loan_balance == 0)
+    loan_for_turn_off = loan_off_query.first()
+    if loan_for_turn_off is not None:
+        loan_off_dict = {
+            "running": False
+        }
+        loan_off_query.update(loan_off_dict, synchronize_session=False)
+        db.commit()
+
+    #send message to user about balance update
+    #lets connect to box-uganda for messaging
+    url = "https://boxuganda.com/api.php"
+    data = {'user': f'{settings.box_uganda_username}', 'password': f'{settings.box_uganda_password}', 'sender': 'sambax',
+            'message': f'Hello {current_user.first_name}, you have paid Sambax Finance UgX{received_payment}.Your loan balance UgX{new_loan_balance}. your loan expiry date is {current_loan.expiry_date}',
+            'reciever': f'{usable_phone_number}'}
+    headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+    test_response = requests.post(url, data=data, headers=headers)
+    if test_response.status_code == 200:
+        print("message success")
+
+    return new_payment
