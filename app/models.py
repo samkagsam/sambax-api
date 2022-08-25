@@ -18,10 +18,10 @@ class Loan(Base):
     loan_payable = Column(Integer, nullable=False)
     loan_balance = Column(Integer, nullable=False)
     created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
-    loan_period = Column(String, nullable=False)
-    expiry_date = Column(String, nullable=False)
+    loan_period = Column(Integer, nullable=False)
+    expiry_date = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    running = Column(Boolean, server_default="False", nullable=True)
+    running = Column(Boolean, server_default="True", nullable=True)
 
 
 
@@ -49,7 +49,7 @@ class Biodata(Base):
     guarantor_one_relationship = Column(String, nullable=False)
     customer_id_url = Column(String, nullable=True)
     customer_image_url = Column(String, nullable=True)
-    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
 
 
 
@@ -59,7 +59,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, nullable=False)
     phone_number = Column(Integer, nullable=False, unique=True)
     password = Column(String, nullable=False)
-    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
     first_name = Column(String, nullable=False, server_default='None')
     last_name = Column(String, nullable=False, server_default='None')
 
@@ -88,7 +88,7 @@ class Application(Base):
     customer_id_url = Column(String, nullable=True)
     customer_image_url = Column(String, nullable=True)
     business_picture_url = Column(String, nullable=True)
-    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
 
@@ -97,7 +97,7 @@ class Payment(Base):
 
     id = Column(Integer, primary_key=True, nullable=False)
     amount = Column(Integer, nullable=False)
-    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     loan_id = Column(Integer, ForeignKey("loans.id", ondelete="CASCADE"), nullable=False)
     owner = relationship("Loan")
@@ -109,7 +109,7 @@ class Admin(Base):
     id = Column(Integer, primary_key=True, nullable=False)
     phone_number = Column(Integer, nullable=False, unique=True)
     password = Column(String, nullable=False)
-    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     email = Column(String, nullable=False)

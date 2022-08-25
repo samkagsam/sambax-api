@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from .. import models, schemas, utils, oauth2, admin_oauth2
 from ..database import engine, get_db
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 router = APIRouter(
@@ -38,7 +38,10 @@ def create_loan(loan: schemas.LoanCreate, db: Session = Depends(get_db), current
 
     if current_loan:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"user already has a running loan. you can't create a new loan for them")
-    new_loan = models.Loan(**loan.dict())
+    expiry_date = datetime.now() + timedelta(days=loan.loan_period)
+    thisdict = loan.dict()
+    thisdict["expiry_date"] = f"{expiry_date}"
+    new_loan = models.Loan(**thisdict)
     db.add(new_loan)
     db.commit()
     db.refresh(new_loan)
@@ -114,3 +117,42 @@ def get_loan_maturity(given_maturity:schemas.LoanMaturity, db: Session = Depends
 
     return rvalues
 #######################################################
+
+
+#testing timedelta
+#@router.get("/testing", status_code=status.HTTP_201_CREATED)
+def testing_loan( db: Session = Depends(get_db)):
+    #now = datetime.now()
+    loans = db.query(models.Loan).filter(models.Loan.running == True).all()
+    for loan in loans:
+        format_string = "%Y-%m-%d %H:%M:%S.%f"
+        expiry_date_string = str(loan.expiry_date)
+        expiry_date_object = datetime.strptime(expiry_date_string, format_string)
+        now_string = str(datetime.now())
+        now = datetime.strptime(now_string, format_string)
+        #maturity_object = now-create_date
+        #loan_maturity = maturity_object.days
+
+        if now > expiry_date_object :
+            #print("hehe")
+            #get the loan balance and compound it
+            interest = 0.01*loan.loan_balance
+            new_loan_balance = loan.loan_balance + interest
+
+            # update the loan balance
+            thisdict = {
+
+                "loan_balance": 1964
+            }
+
+            thisdict["loan_balance"] = new_loan_balance
+
+            # update the loan balance of the user
+            loan_query = db.query(models.Loan).filter(models.Loan.user_id == loan.user_id,
+                                                      models.Loan.running == True)
+            loan_query.update(thisdict, synchronize_session=False)
+            db.commit()
+
+
+
+    return {}

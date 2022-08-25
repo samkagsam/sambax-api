@@ -45,8 +45,7 @@ class LoanBase(BaseModel):
     loan_interest: int
     loan_payable: int
     loan_balance: int
-    loan_period: str
-    expiry_date: str
+    loan_period: int
     user_id: int
 
 
@@ -181,5 +180,16 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     id: Optional[str] = None
 
+
+class SignTokenData(BaseModel):
+    otp: Optional[int] = None
+    phone_number: int
+    password: str
+    first_name: str
+    last_name: str
+
+
+class TokenOtp(BaseModel):
+    otp: int
 
 

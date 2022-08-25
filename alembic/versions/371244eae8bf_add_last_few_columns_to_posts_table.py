@@ -17,12 +17,10 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column('posts', sa.Column('published', sa.Boolean(), nullable=False, server_default='True'))
-    op.add_column('posts', sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('now()'), nullable=False))
+    #contents were intentionally deleted by sam because of irrelevance
     pass
 
 
 def downgrade():
-    op.drop_column("posts", "published")
-    op.drop_column("posts", "created_at")
+    # contents were intentionally deleted by sam because of irrelevance
     pass

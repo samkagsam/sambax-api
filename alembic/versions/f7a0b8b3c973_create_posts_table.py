@@ -17,10 +17,12 @@ depends_on = None
 
 
 def upgrade():
-    op.create_table("posts", sa.Column('id', sa.Integer(), nullable=False, primary_key=True), sa.Column('title', sa.String(), nullable=False))
+    #contents were intentionally deleted by sam due to irrelevance
+
     pass
 
 
 def downgrade():
-    op.drop_table('posts')
+    #contents were intentionally deleted by sam due to irrelevance
+
     pass

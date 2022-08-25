@@ -17,10 +17,11 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column('posts', sa.Column('content', sa.String(), nullable=False))
+    #content deleted by sam because of irrelevance
     pass
 
 
 def downgrade():
-    op.drop_column('posts', 'content')
+    # content deleted by sam because of irrelevance
+
     pass
