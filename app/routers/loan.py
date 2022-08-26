@@ -120,7 +120,7 @@ def get_loan_maturity(given_maturity:schemas.LoanMaturity, db: Session = Depends
 
 
 #testing timedelta
-#@router.get("/testing", status_code=status.HTTP_201_CREATED)
+@router.get("/testing", status_code=status.HTTP_201_CREATED)
 def testing_loan( db: Session = Depends(get_db)):
     #now = datetime.now()
     loans = db.query(models.Loan).filter(models.Loan.running == True).all()
