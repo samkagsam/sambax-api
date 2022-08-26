@@ -1,11 +1,17 @@
-from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
-from sqlalchemy.orm import Session
-from app import models, schemas, utils, oauth2, admin_oauth2
-from app.database import engine, get_db
-from typing import Optional, List
+from jose import JWTError, jwt
 from datetime import datetime, timedelta
+from . import schemas, database, models
+from fastapi import Depends, status, HTTPException
+from fastapi.security import OAuth2PasswordBearer
+
+from .database import get_db
+from .schemas import TokenData
+from sqlalchemy.orm import Session
+from .config import settings
 
 
+#testing timedelta
+#@router.get("/testing", status_code=status.HTTP_201_CREATED)
 def compound_loan( db: Session = Depends(get_db)):
     #now = datetime.now()
     loans = db.query(models.Loan).filter(models.Loan.running == True).all()
@@ -40,8 +46,8 @@ def compound_loan( db: Session = Depends(get_db)):
 
 
 
-    return {"message":"hello"}
+    return {}
 
 
-db:Session = Depends(get_db())
+db: Session = Depends(get_db)
 compound_loan(db)
