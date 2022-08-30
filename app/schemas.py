@@ -23,6 +23,7 @@ class BiodataBase(BaseModel):
     guarantor_one_relationship: str
     customer_id_url: str
     customer_image_url: str
+    business_picture_url: str
 
 
 class BiodataCreate(BiodataBase):
@@ -47,6 +48,7 @@ class LoanBase(BaseModel):
     loan_balance: int
     loan_period: int
     user_id: int
+    loan_type: str
 
 
 
@@ -120,7 +122,7 @@ class Application(BaseModel):
     guarantor_one_relationship: str
     customer_id_url: str
     customer_image_url: str
-    business_picture_url: str
+    purpose_for_loan: str
 
 
 

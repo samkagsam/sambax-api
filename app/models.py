@@ -25,6 +25,7 @@ class Loan(Base):
     expiry_date = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     running = Column(Boolean, server_default="True", nullable=True)
+    loan_type = Column(String, nullable=False, server_default='Business')
 
 
 
@@ -53,6 +54,7 @@ class Biodata(Base):
     customer_id_url = Column(String, nullable=True)
     customer_image_url = Column(String, nullable=True)
     created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
+    business_picture_url = Column(String, nullable=True)
 
 
 
@@ -90,9 +92,10 @@ class Application(Base):
     guarantor_one_relationship = Column(String, nullable=False)
     customer_id_url = Column(String, nullable=True)
     customer_image_url = Column(String, nullable=True)
-    business_picture_url = Column(String, nullable=True)
+
     created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    purpose_for_loan = Column(String, nullable=False, server_default='None')
 
 
 class Payment(Base):
