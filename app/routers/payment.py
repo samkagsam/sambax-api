@@ -5,6 +5,7 @@ from ..database import engine, get_db
 from typing import Optional, List
 import requests
 from ..config import settings
+from datetime import datetime, timedelta
 
 
 router = APIRouter(
@@ -208,3 +209,36 @@ def create_payment_by_admin(payment: schemas.AdminPayment, db: Session = Depends
         print("message success")
 
     return new_payment
+
+
+# getting the total number of  payments received in a timeframe, used by admin
+@router.post("/admin/number_of_payments_made_in_timeframe")
+def get_payments_made(received_dates: schemas.ReceivedDates, db: Session = Depends(get_db),
+                     current_admin: int = Depends(admin_oauth2.get_current_admin)):
+    payments = db.query(models.Payment).all()
+    # number_of_active_loans = len(loans)
+    num_payments_made = 0
+    sum_payments_made = 0
+    for payment in payments:
+
+        # print("hello")
+        format_string = "%Y-%m-%d %H:%M:%S.%f"
+        create_date_string = str(payment.created_at)
+        create_date_object = datetime.strptime(create_date_string, format_string)
+
+        # from_date_string = "2022-08-01 00:00:00.000000"
+        # to_date_string = "2022-08-31 00:00:00.00000"
+        from_date_string = received_dates.from_date
+        to_date_string = received_dates.to_date
+        from_date_object = datetime.strptime(from_date_string, format_string)
+        to_date_object = datetime.strptime(to_date_string, format_string)
+
+        if from_date_object <= create_date_object <= to_date_object:
+            # print("hehe")
+            # print(create_date_object)
+
+            # get the number of loans issued
+            num_payments_made += 1
+            sum_payments_made += payment.amount
+
+    return num_payments_made, sum_payments_made

@@ -4,6 +4,7 @@ from .. import models, schemas, utils, oauth2, admin_oauth2
 from ..database import engine, get_db
 from typing import Optional, List
 from datetime import datetime, timedelta
+from sqlalchemy.sql import func
 
 
 router = APIRouter(
@@ -118,4 +119,84 @@ def get_loan_maturity(given_maturity:schemas.LoanMaturity, db: Session = Depends
     return rvalues
 #######################################################
 
+
+#getting the total number of active loans by admin
+@router.get("/admin/total_number_of_active_loans")
+def get_loans_statistics(db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
+    loans = db.query(models.Loan).filter(models.Loan.running == True).all()
+    number_of_active_loans = len(loans)
+    sum_loans_payable = 0
+    sum_loans_balance = 0
+    for loan in loans:
+        sum_loans_payable += loan.loan_payable
+        sum_loans_balance += loan.loan_balance
+
+    #sum = loans.with_entities(func.sum(models.Loan.loan_payable)).scalar()
+    return number_of_active_loans, sum_loans_payable, sum_loans_balance
+
+
+#getting the total number of  loans issued in a timeframe by admin
+@router.post("/admin/number_of_loans_issued_in_timeframe")
+def get_loans_issued(received_dates:schemas.ReceivedDates, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
+    loans = db.query(models.Loan).all()
+    #number_of_active_loans = len(loans)
+    num_loans_issued = 0
+    sum_loan_principle = 0
+    sum_loan_interest = 0
+    for loan in loans:
+
+
+        #print("hello")
+        format_string = "%Y-%m-%d %H:%M:%S.%f"
+        create_date_string = str(loan.created_at)
+        create_date_object = datetime.strptime(create_date_string, format_string)
+
+        #from_date_string = "2022-08-01 00:00:00.000000"
+        #to_date_string = "2022-08-31 00:00:00.00000"
+        from_date_string = received_dates.from_date
+        to_date_string = received_dates.to_date
+        from_date_object = datetime.strptime(from_date_string, format_string)
+        to_date_object = datetime.strptime(to_date_string, format_string)
+
+
+
+        if from_date_object <= create_date_object <= to_date_object:
+            #print("hehe")
+            #print(create_date_object)
+
+            #get the number of loans issued
+            num_loans_issued += 1
+            sum_loan_principle += loan.loan_principle
+            sum_loan_interest += loan.loan_interest
+
+
+
+    return num_loans_issued, sum_loan_principle, sum_loan_interest
+
+
+#get expired loans, used by admin
+@router.get("/admin/expired_loans")
+def get_expired_loans(db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
+    loan_details = []
+    loans = db.query(models.Loan).filter(models.Loan.running == True).all()
+
+    if not loans:
+        print("there are no results")
+    for loan in loans:
+        #print("hello")
+        format_string = "%Y-%m-%d %H:%M:%S.%f"
+        expiry_date_string = str(loan.expiry_date)
+        expiry_date_object = datetime.strptime(expiry_date_string, format_string)
+        now_string = str(datetime.now())
+        now = datetime.strptime(now_string, format_string)
+        #maturity_object = now-create_date
+        #loan_maturity = maturity_object.days
+
+        if now > expiry_date_object :
+            #rvalues.append(loan.user_id)
+            user = db.query(models.User).filter(models.User.id == loan.user_id).first()
+            user_details = [user.first_name, user.last_name, user.phone_number, loan.loan_balance ]
+            loan_details.append(user_details)
+
+    return loan_details
 

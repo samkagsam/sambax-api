@@ -193,3 +193,6 @@ class TokenOtp(BaseModel):
     otp: int
 
 
+class ReceivedDates(BaseModel):
+    from_date: str
+    to_date: str
