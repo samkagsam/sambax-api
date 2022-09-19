@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
 from sqlalchemy.orm import Session
-from .. import models, schemas, utils, admin_oauth2, user_oauth2
+from .. import models, schemas, utils, admin_oauth2, user_oauth2, oauth2
 from ..database import engine, get_db
 from typing import Optional, List, Union
 from pydantic import BaseModel, HttpUrl
@@ -40,7 +40,7 @@ def signup_user(user:schemas.UserCreate, db: Session = Depends(get_db)):
     #lets connect to box-uganda for messaging
     url = "https://boxuganda.com/api.php"
     data = {'user': f'{settings.box_uganda_username}', 'password': f'{settings.box_uganda_password}', 'sender': 'sambax',
-            'message': f'your OTP is {random_otp}',
+            'message': f'your Sambax OTP is {random_otp}',
             'reciever': f'{usable_phone_number}'}
     headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
     test_response = requests.post(url, data=data, headers=headers)
@@ -79,7 +79,14 @@ def create_user(given_otp:schemas.TokenOtp, db: Session = Depends(get_db), token
     db.commit()
     db.refresh(new_user)
 
-    return new_user
+    #new_user_id = new_user.id
+    # create token
+    login_access_token = oauth2.create_access_token(data={"user_id": new_user.id})
+    # return token
+
+    return {"access_token": login_access_token, "token_type": "bearer"}
+
+    #return new_user
 
 
 #get one user
