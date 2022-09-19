@@ -54,7 +54,7 @@ def signup_user(user:schemas.UserCreate, db: Session = Depends(get_db)):
 
 
 #creating a new user
-@router.post("/users", status_code=status.HTTP_201_CREATED, response_model=schemas.UserOut)
+@router.post("/users", status_code=status.HTTP_201_CREATED)
 def create_user(given_otp:schemas.TokenOtp, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     token_data = user_oauth2.verify_access_token(token)
 
