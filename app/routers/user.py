@@ -100,7 +100,7 @@ def get_user(id: int, db: Session = Depends(get_db), current_admin: int = Depend
 
 
 #landing page for a user after logging in or signing up
-@router.get("/landing_page")
+@router.get("/landing_page", response_model=schemas.LandingPage)
 def land_user( db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
 
     account_balance = str(current_user.account_balance)
