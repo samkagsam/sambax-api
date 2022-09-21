@@ -67,6 +67,7 @@ class User(Base):
     created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
     first_name = Column(String, nullable=False, server_default='None')
     last_name = Column(String, nullable=False, server_default='None')
+    account_balance = Column(Integer, nullable=False, server_default='0')
 
 
 class Application(Base):
@@ -119,3 +120,15 @@ class Admin(Base):
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     email = Column(String, nullable=False)
+
+
+class Transaction(Base):
+    __tablename__ = "transactions"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    amount = Column(Integer, nullable=False)
+    transaction_type = Column(String, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
+
+

@@ -198,3 +198,13 @@ class TokenOtp(BaseModel):
 class ReceivedDates(BaseModel):
     from_date: str
     to_date: str
+
+
+#determines the format of application sent back to a user after registration
+class LandingPage(BaseModel):
+    first_name: str
+    account_balance: str
+    loan_balance: str
+
+    class Config:
+        orm_mode = True

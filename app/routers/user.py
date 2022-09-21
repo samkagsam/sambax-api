@@ -99,3 +99,28 @@ def get_user(id: int, db: Session = Depends(get_db), current_admin: int = Depend
     return user
 
 
+#landing page for a user after logging in or signing up
+@router.get("/landing_page")
+def land_user( db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+
+    account_balance = str(current_user.account_balance)
+    first_name = current_user.first_name
+    loan_status = ""
+    current_loan = db.query(models.Loan).filter(models.Loan.user_id == current_user.id, models.Loan.running == True).first()
+
+    if not current_loan:
+        loan_status = "you have no active loan with Sambax Finance"
+        #raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"you have no active loan")
+
+    else:
+        loan_balance = current_loan.loan_balance
+        # convert loan balance to string
+        loan_status = str(loan_balance)
+
+    #expiry_date = current_loan.expiry_date
+
+
+
+
+
+    return {"first_name": first_name, "account_balance": account_balance, "loan_balance": loan_status}
