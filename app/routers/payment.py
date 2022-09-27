@@ -28,7 +28,7 @@ def get_my_payments(db: Session = Depends(get_db), current_user: int = Depends(o
 
 
 #creating a payment
-@router.post("/payments", status_code=status.HTTP_201_CREATED, response_model=schemas.PaymentCreate)
+@router.post("/payments", status_code=status.HTTP_201_CREATED, response_model=schemas.PaymentOut)
 def create_payment_by_user(payment: schemas.Payment, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
 
     #check whether user has a running loan
