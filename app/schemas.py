@@ -208,3 +208,21 @@ class LandingPage(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+#determines the format of transaction information received from a user
+class TransactionIn(BaseModel):
+
+    amount: int
+
+
+#determines the format of information sent back to a user about a transaction
+class TransactionOut(BaseModel):
+    id: int
+    amount: int
+    transaction_type: str
+    created_at: datetime
+
+
+    class Config:
+        orm_mode = True
