@@ -122,6 +122,6 @@ def create_withdraw_by_user(withdraw: schemas.TransactionIn, db: Session = Depen
 
 #getting all transactions, made by a logged-in user
 @router.get("/transaction_statement", response_model=List[schemas.TransactionOut])
-def get_my_payments(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+def get_transaction_statement(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     transactions = db.query(models.Transaction).filter(models.Transaction.user_id == current_user.id).all()
     return transactions
