@@ -115,11 +115,11 @@ class Application(BaseModel):
     contact_two: int
     requested_loan_amount: int
     guarantor_one: str
-    guarantor_two: str
     guarantor_one_contact: int
+    guarantor_one_relationship: str
+    guarantor_two: str
     guarantor_two_contact: int
     guarantor_two_relationship: str
-    guarantor_one_relationship: str
     customer_id_url: str
     customer_image_url: str
     purpose_for_loan: str
