@@ -226,3 +226,7 @@ class TransactionOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class PhoneNumberRecover(BaseModel):
+    phone_number: int

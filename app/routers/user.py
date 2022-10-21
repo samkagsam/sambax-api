@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
 from sqlalchemy.orm import Session
-from .. import models, schemas, utils, admin_oauth2, user_oauth2, oauth2
+from .. import models, schemas, utils, admin_oauth2, user_oauth2, oauth2, password_recover_oauth2
 from ..database import engine, get_db
 from typing import Optional, List, Union
 from pydantic import BaseModel, HttpUrl
@@ -12,6 +12,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="user_signup")
+oauth2_scheme2 = OAuth2PasswordBearer(tokenUrl="forgot_password")
 
 
 
@@ -30,7 +31,7 @@ def signup_user(user:schemas.UserCreate, db: Session = Depends(get_db)):
     access_token = user_oauth2.create_access_token(data={"otp": random_otp, "first_name": user.first_name,
                                                          "last_name": user.last_name, "phone_number": user.phone_number,
                                                          "password": user.password})
-    #add logic for collecting payment from a user
+    #add logic for getting usable phone number of a user
     appendage = '256'
     number_string = str(user.phone_number)
     usable_phone_number_string = appendage + number_string
@@ -119,8 +120,37 @@ def land_user( db: Session = Depends(get_db), current_user: int = Depends(oauth2
 
     #expiry_date = current_loan.expiry_date
 
-
-
-
-
     return {"first_name": first_name, "account_balance": account_balance, "loan_balance": loan_status}
+
+
+#for a user who has forgotten their password
+@router.post("/forgot_password", status_code=status.HTTP_201_CREATED, response_model=schemas.Token)
+def check_user_phone_number(user:schemas.PhoneNumberRecover, db: Session = Depends(get_db)):
+    #first create a random otp
+    random_otp = random.randrange(1000, 10000)
+
+    #create token
+    access_token = password_recover_oauth2.create_access_token(data={"otp": random_otp,
+                                                          "phone_number": user.phone_number
+                                                         })
+    #add logic for getting usable phone number of a user
+    appendage = '256'
+    number_string = str(user.phone_number)
+    usable_phone_number_string = appendage + number_string
+    usable_phone_number = int(usable_phone_number_string)
+
+    #send OTP to user
+    #lets connect to box-uganda for messaging
+    url = "https://boxuganda.com/api.php"
+    data = {'user': f'{settings.box_uganda_username}', 'password': f'{settings.box_uganda_password}', 'sender': 'sambax',
+            'message': f'your Sambax OTP is {random_otp}',
+            'reciever': f'{usable_phone_number}'}
+    headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+    test_response = requests.post(url, data=data, headers=headers)
+    if test_response.status_code == 200:
+        print("message success")
+
+
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
