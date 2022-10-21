@@ -126,6 +126,11 @@ def land_user( db: Session = Depends(get_db), current_user: int = Depends(oauth2
 #for a user who has forgotten their password
 @router.post("/forgot_password", status_code=status.HTTP_201_CREATED, response_model=schemas.Token)
 def check_user_phone_number(user:schemas.PhoneNumberRecover, db: Session = Depends(get_db)):
+    #first check if the phone number given is registered with sambax
+    user_inquired = db.query(models.User).filter(models.User.phone_number == user.phone_number).first()
+    if not user_inquired:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"user with phone number {user.phone_number} was not found")
+
     #first create a random otp
     random_otp = random.randrange(1000, 10000)
 
