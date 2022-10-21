@@ -34,7 +34,7 @@ def verify_access_token(token: str):
 
         if otp is None:
             raise credentials_exception
-        token_data = schemas.SignTokenData(otp=otp, phone_number=phone_number)
+        token_data = schemas.RecoverTokenData(otp=otp, phone_number=phone_number)
     except JWTError:
         raise credentials_exception
     return token_data

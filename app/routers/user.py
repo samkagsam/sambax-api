@@ -159,3 +159,22 @@ def check_user_phone_number(user:schemas.PhoneNumberRecover, db: Session = Depen
     return {"access_token": access_token, "token_type": "bearer"}
 
 
+#validating the otp for new password
+@router.post("/otp_validate", status_code=status.HTTP_201_CREATED, response_model=schemas.Token)
+def validate_user_otp_password_recover(given_otp:schemas.TokenOtp, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme2)):
+    token_data = password_recover_oauth2.verify_access_token(token)
+
+    if token_data.otp != given_otp.otp:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"you have given the wrong otp")
+
+    # get the user_id of the user
+    user = db.query(models.User).filter(models.User.phone_number == token_data.phone_number).first()
+
+    # create token
+    login_access_token = oauth2.create_access_token(data={"user_id": user.id})
+    # return token
+
+    return {"access_token": login_access_token, "token_type": "bearer"}
+
+
+

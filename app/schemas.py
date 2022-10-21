@@ -230,3 +230,8 @@ class TransactionOut(BaseModel):
 
 class PhoneNumberRecover(BaseModel):
     phone_number: int
+
+
+class RecoverTokenData(BaseModel):
+    otp: Optional[int] = None
+    phone_number: int
