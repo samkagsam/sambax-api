@@ -235,3 +235,7 @@ class PhoneNumberRecover(BaseModel):
 class RecoverTokenData(BaseModel):
     otp: Optional[int] = None
     phone_number: int
+
+
+class PasswordChange(BaseModel):
+    password:str

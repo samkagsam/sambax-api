@@ -177,4 +177,31 @@ def validate_user_otp_password_recover(given_otp:schemas.TokenOtp, db: Session =
     return {"access_token": login_access_token, "token_type": "bearer"}
 
 
+#update password of user
+@router.post("/password_update", status_code=status.HTTP_201_CREATED, response_model=schemas.UserOut)
+def update_user_password(givenPassword: schemas.PasswordChange, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+
+
+    #first hash the given password
+    hashed_password = utils.hash(givenPassword.password)
+
+    # use a random dictionary to update the password
+    thisdict = {
+
+        "password": "xyz"
+    }
+
+    thisdict["password"] = hashed_password
+
+    #update the password of the user
+    password_query = db.query(models.User).filter(models.User.id == current_user.id)
+    password_query.update(thisdict, synchronize_session=False)
+    db.commit()
+
+
+
+    return current_user
+
+
+
 
