@@ -138,7 +138,7 @@ def update_payment(id: int, payment: schemas.Payment, db: Session = Depends(get_
 
 
 #creating a payment by admin
-@router.post("/admin/payments", status_code=status.HTTP_201_CREATED, response_model=schemas.PaymentCreate)
+@router.post("/admin/payments", status_code=status.HTTP_201_CREATED, response_model=schemas.PaymentOut)
 def create_payment_by_admin(payment: schemas.AdminPayment, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
     #find the user
     current_user = db.query(models.User).filter(models.User.phone_number == payment.phone_number).first()
