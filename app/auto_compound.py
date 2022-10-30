@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 #from database import engine, get_db
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+import math
 
 
 
@@ -48,8 +49,11 @@ with Session.begin() as session:
         if now > expiry_date_object :
             #print("hehe")
             #get the loan balance and compound it
-            interest = 0.01*loan.loan_balance
-            new_loan_balance = loan.loan_balance + interest
+            interest = 0.007*loan.loan_balance
+            new_loan_balance_figure = loan.loan_balance + interest
+            new_loan_balance = math.ceil(new_loan_balance_figure)
+            print(new_loan_balance_figure)
+            print(new_loan_balance)
 
             # update the loan balance
             thisdict = {
@@ -63,7 +67,9 @@ with Session.begin() as session:
             loan_query = session.query(models.Loan).filter(models.Loan.user_id == loan.user_id,
                                                       models.Loan.running == True)
             loan_query.update(thisdict, synchronize_session=False)
-            session.commit()
+            #session.commit()
+            #session.close()
+            session.flush()
 
 
 
