@@ -195,7 +195,34 @@ def get_expired_loans(db: Session = Depends(get_db), current_admin: int = Depend
         if now > expiry_date_object :
             #rvalues.append(loan.user_id)
             user = db.query(models.User).filter(models.User.id == loan.user_id).first()
-            user_details = [user.first_name, user.last_name, user.phone_number, loan.loan_balance ]
+            user_details = [user.first_name, user.last_name, user.phone_number, loan.loan_balance, loan.expiry_date]
+            loan_details.append(user_details)
+
+    return loan_details
+
+
+#get non-expired loans, used by admin, these loans are active but not expired
+@router.get("/admin/non_expired_loans")
+def get_non_expired_loans(db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
+    loan_details = []
+    loans = db.query(models.Loan).filter(models.Loan.running == True).all()
+
+    if not loans:
+        print("there are no results")
+    for loan in loans:
+        #print("hello")
+        format_string = "%Y-%m-%d %H:%M:%S.%f"
+        expiry_date_string = str(loan.expiry_date)
+        expiry_date_object = datetime.strptime(expiry_date_string, format_string)
+        now_string = str(datetime.now())
+        now = datetime.strptime(now_string, format_string)
+        #maturity_object = now-create_date
+        #loan_maturity = maturity_object.days
+
+        if expiry_date_object > now:
+            #rvalues.append(loan.user_id)
+            user = db.query(models.User).filter(models.User.id == loan.user_id).first()
+            user_details = [user.first_name, user.last_name, user.phone_number, loan.loan_balance, loan.expiry_date]
             loan_details.append(user_details)
 
     return loan_details
