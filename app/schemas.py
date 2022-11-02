@@ -87,6 +87,8 @@ class UserCreate(BaseModel):
     password: str
     first_name: str
     last_name: str
+    customer_image_url: str
+    customer_id_url: str
 
 
 #determines the format of information sent back to a user after registration
@@ -189,6 +191,8 @@ class SignTokenData(BaseModel):
     password: str
     first_name: str
     last_name: str
+    customer_image_url: str
+    customer_id_url: str
 
 
 class TokenOtp(BaseModel):

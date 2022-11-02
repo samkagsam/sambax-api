@@ -32,12 +32,15 @@ def verify_access_token(token: str):
         last_name: str = payload.get("last_name")
         phone_number: int = payload.get("phone_number")
         password: str = payload.get("password")
+        customer_image_url: str = payload.get("customer_image_url")
+        customer_id_url: str = payload.get("customer_id_url")
 
 
         if otp is None:
             raise credentials_exception
         token_data = schemas.SignTokenData(otp=otp, first_name=first_name, last_name=last_name,
-                                           phone_number=phone_number, password=password)
+                                           phone_number=phone_number, password=password,
+                                           customer_image_url=customer_image_url, customer_id_url=customer_id_url)
     except JWTError:
         raise credentials_exception
     return token_data

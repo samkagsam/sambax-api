@@ -30,7 +30,8 @@ def signup_user(user:schemas.UserCreate, db: Session = Depends(get_db)):
     #create token
     access_token = user_oauth2.create_access_token(data={"otp": random_otp, "first_name": user.first_name,
                                                          "last_name": user.last_name, "phone_number": user.phone_number,
-                                                         "password": user.password})
+                                                         "password": user.password, "customer_image_url": user.customer_image_url,
+                                                         "customer_id_url": user.customer_id_url})
     #add logic for getting usable phone number of a user
     appendage = '256'
     number_string = str(user.phone_number)
@@ -66,12 +67,21 @@ def create_user(given_otp:schemas.TokenOtp, db: Session = Depends(get_db), token
     hashed_password = utils.hash(token_data.password)
     #token_data.password = hashed_password
 
+    #let us put together the urls of the customer
+    #this format:https://sambaxfinance.com/media/images/Tenywa/TENYWA.jpg
+    #customer_image_url_string = f"https://sambaxfinance.com/media/images/{token_data.phone_number}/{token_data.customer_image_url}"
+    #customer_id_url_string = f"https://sambaxfinance.com/media/images/{token_data.phone_number}/{token_data.customer_id_url}"
+    #print(customer_image_url_string)
+    #print(customer_id_url_string)
+
     #use a new dictionary to create the user
     thisdict = {
         "phone_number": f"{token_data.phone_number}",
         "password": f"{hashed_password}",
         "first_name": f"{token_data.first_name}",
-        "last_name": f"{token_data.last_name}"
+        "last_name": f"{token_data.last_name}",
+        "customer_image_url": f"https://sambaxfinance.com/media/images/{token_data.phone_number}/{token_data.customer_image_url}",
+        "customer_id_url": f"https://sambaxfinance.com/media/images/{token_data.phone_number}/{token_data.customer_id_url}"
     }
 
     #add user to database

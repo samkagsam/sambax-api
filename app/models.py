@@ -68,6 +68,8 @@ class User(Base):
     first_name = Column(String, nullable=False, server_default='None')
     last_name = Column(String, nullable=False, server_default='None')
     account_balance = Column(Integer, nullable=False, server_default='0')
+    customer_image_url = Column(String, nullable=True)
+    customer_id_url = Column(String, nullable=True)
 
 
 class Application(Base):
