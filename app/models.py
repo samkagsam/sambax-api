@@ -70,6 +70,7 @@ class User(Base):
     account_balance = Column(Integer, nullable=False, server_default='0')
     customer_image_url = Column(String, nullable=True)
     customer_id_url = Column(String, nullable=True)
+    network = Column(String, nullable=False, server_default='other')
 
 
 class Application(Base):

@@ -65,14 +65,31 @@ def create_user(given_otp:schemas.TokenOtp, db: Session = Depends(get_db), token
 
     #first hash the password
     hashed_password = utils.hash(token_data.password)
-    #token_data.password = hashed_password
 
     #let us put together the urls of the customer
     #this format:https://sambaxfinance.com/media/images/Tenywa/TENYWA.jpg
     #customer_image_url_string = f"https://sambaxfinance.com/media/images/{token_data.phone_number}/{token_data.customer_image_url}"
     #customer_id_url_string = f"https://sambaxfinance.com/media/images/{token_data.phone_number}/{token_data.customer_id_url}"
-    #print(customer_image_url_string)
-    #print(customer_id_url_string)
+
+    #let us get the network of the customer
+    number_string = str(token_data.phone_number)
+    num_list = list(number_string)
+    num_list_index_zero = num_list[0]
+    num_list_index_one = num_list[1]
+    #num_list_index_two = num_list[2]
+    newtwork_string = num_list_index_zero + num_list_index_one
+    #print(newtwork_string)
+
+    if newtwork_string == "70" or newtwork_string =="75" or newtwork_string =="74":
+        network = "airtel"
+    elif newtwork_string == "77" or newtwork_string =="78" or newtwork_string =="76":
+        network = "mtn"
+    else:
+        network = "other"
+
+    #print(network)
+
+
 
     #use a new dictionary to create the user
     thisdict = {
@@ -81,7 +98,8 @@ def create_user(given_otp:schemas.TokenOtp, db: Session = Depends(get_db), token
         "first_name": f"{token_data.first_name}",
         "last_name": f"{token_data.last_name}",
         "customer_image_url": f"https://sambaxfinance.com/media/images/{token_data.phone_number}/{token_data.customer_image_url}",
-        "customer_id_url": f"https://sambaxfinance.com/media/images/{token_data.phone_number}/{token_data.customer_id_url}"
+        "customer_id_url": f"https://sambaxfinance.com/media/images/{token_data.phone_number}/{token_data.customer_id_url}",
+        "network": f"{network}"
     }
 
     #add user to database
