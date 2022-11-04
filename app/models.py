@@ -71,6 +71,7 @@ class User(Base):
     customer_image_url = Column(String, nullable=True)
     customer_id_url = Column(String, nullable=True)
     network = Column(String, nullable=False, server_default='other')
+    group = Column(Integer, nullable=True)
 
 
 class Application(Base):
