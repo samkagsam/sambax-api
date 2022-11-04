@@ -135,3 +135,33 @@ class Transaction(Base):
     created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
 
 
+class Group(Base):
+    __tablename__ = "groups"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    payout = Column(Integer, nullable=False, server_default='0')
+    account_balance = Column(Integer, nullable=False, server_default='0')
+    created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
+
+
+class Payee(Base):
+    __tablename__ = "payees"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    week = Column(Integer, nullable=False, server_default='0')
+    group = Column(Integer, nullable=False, server_default='0')
+    user_id = Column(Integer, nullable=False, server_default='0')
+    cycle = Column(String, nullable=False, server_default='None')
+    created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
+
+
+class GroupPayment(Base):
+    __tablename__ = "group_payments"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    amount = Column(Integer, nullable=False)
+    created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    group_id = Column(Integer, ForeignKey("groups.id", ondelete="CASCADE"), nullable=False)
+    week = Column(Integer, nullable=False, server_default='0')
+    cycle = Column(String, nullable=False, server_default='None')
