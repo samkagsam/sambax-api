@@ -59,7 +59,7 @@ with Session.begin() as session:
         url = "https://boxuganda.com/api.php"
         data = {'user': f'{settings.box_uganda_username}', 'password': f'{settings.box_uganda_password}',
                 'sender': 'sambax',
-                'message': f'Hello {user.first_name}, Your loan balance with Sambax Finance Ltd is UgX{loan.loan_balance}.Your loan expires on {loan.expiry_date} .You are advised to make payment today to clear the loan. Thank you',
+                'message': f'Hello {user.first_name}, Your loan balance with Sambax Finance Ltd is UgX{loan.loan_balance}.Your loan expires on {loan.expiry_date}.Please pay today to clear the loan.Thanks',
                 'reciever': f'{usable_phone_number}'}
         headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
         test_response = requests.post(url, data=data, headers=headers)

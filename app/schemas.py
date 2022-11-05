@@ -243,3 +243,47 @@ class RecoverTokenData(BaseModel):
 
 class PasswordChange(BaseModel):
     password:str
+
+
+#determines the type of information received about a group
+class GroupCreate(BaseModel):
+    payout: int
+
+
+#determines the format of application sent back to admin after group registration
+class GroupOut(BaseModel):
+    id: int
+    payout: int
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+#determines the type of information received about a payee
+class PayeeCreate(BaseModel):
+    phone_number: int
+    group_id: int
+    week_no: int
+    cycle: str
+
+
+#determines the format of application sent back to admin after payee registration
+class PayeeOut(BaseModel):
+    id: int
+    week: int
+    group: int
+    cycle: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+#determines the format of payment information entered by admin about a user
+class GroupPaymentIn(BaseModel):
+
+    amount: int
+    phone_number: int
+    week: int
+    cycle: str
