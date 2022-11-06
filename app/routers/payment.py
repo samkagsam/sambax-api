@@ -242,3 +242,13 @@ def get_payments_made(received_dates: schemas.ReceivedDates, db: Session = Depen
             sum_payments_made += payment.amount
 
     return num_payments_made, sum_payments_made
+
+
+#getting all payments, made by a user, used by admin
+@router.post("/admin/user_payments", response_model=List[schemas.PaymentOut])
+def get_user_payments(phone_number_given: schemas.PhoneNumberRecover, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
+    # find the user
+    current_user = db.query(models.User).filter(models.User.phone_number == phone_number_given.phone_number).first()
+
+    payments = db.query(models.Payment).filter(models.Payment.user_id == current_user.id).all()
+    return payments

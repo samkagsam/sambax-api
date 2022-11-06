@@ -287,3 +287,10 @@ class GroupPaymentIn(BaseModel):
     phone_number: int
     week: int
     cycle: str
+
+
+#determines the format of payment information for group entered by a user
+class GroupPaymentIn(BaseModel):
+    amount: int
+    week: int
+    cycle: str
