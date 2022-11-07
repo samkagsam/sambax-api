@@ -57,7 +57,7 @@ def create_payee(payee: schemas.PayeeCreate, db: Session = Depends(get_db), curr
 
 #creating a group payment by admin
 @router.post("/admin/group_payments", status_code=status.HTTP_201_CREATED, response_model=schemas.PaymentOut)
-def create_group_payment_by_admin(payment: schemas.GroupPaymentIn, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
+def create_group_payment_by_admin(payment: schemas.AdminGroupPaymentIn, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
     #find the user
     current_user = db.query(models.User).filter(models.User.phone_number == payment.phone_number).first()
     if not current_user:
@@ -138,11 +138,7 @@ def create_group_payment_by_admin(payment: schemas.GroupPaymentIn, db: Session =
 
 #creating a group payment by user
 @router.post("/group_payments", status_code=status.HTTP_201_CREATED, response_model=schemas.PaymentOut)
-def create_group_payment_by_user(payment: schemas.GroupPaymentIn, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
-    #find the user
-    current_user = db.query(models.User).filter(models.User.phone_number == payment.phone_number).first()
-    if not current_user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"user with that phone number was not found")
+def create_group_payment_by_user(payment: schemas.GroupPaymentIn, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
 
     #check whether user has a running group
     current_payee = db.query(models.Payee).filter(models.Payee.user_id == current_user.id).first()
@@ -216,3 +212,80 @@ def create_group_payment_by_user(payment: schemas.GroupPaymentIn, db: Session = 
 
     return new_payment
 
+
+#getting all payments, made to your saving group
+#@router.get("/group/payments", response_model=List[schemas.PaymentOut])
+@router.post("/group/payments")
+def get_my_group_payments(cycle_given: schemas.GroupPaymentsInquiry, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    #payment_details = []
+    list_details = []
+    #payments = db.query(models.Payment).filter(models.Payment.user_id == current_user.id).all()
+    payee = db.query(models.Payee).filter(models.Payee.user_id == current_user.id).first()
+
+    if not payee:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"user has no saving group to inquire for")
+
+    payments = db.query(models.GroupPayment).filter(models.GroupPayment.group_id == payee.group, models.GroupPayment.cycle == cycle_given.cycle).all()
+
+    for payment in payments:
+        user = db.query(models.User).filter(models.User.id == payment.user_id).first()
+        #user_details = [user.first_name, user.last_name, user.phone_number, payment.amount, payment.created_at]
+        #user_details2 = ["": {user.first_name}, user.last_name, user.phone_number, payment.amount, payment.created_at]
+        user_details2 = {"first_name": user.first_name,
+                         "last_name": user.last_name,
+                         "phone_number": user.phone_number,
+                         "amount": payment.amount,
+                         "created_at": payment.created_at}
+
+        #payment_details.append(user_details)
+        list_details.append(user_details2)
+
+    return list_details
+
+
+#creating a withdrawal from group
+@router.post("/group/withdrawals", status_code=status.HTTP_201_CREATED, response_model=schemas.TransactionOut)
+def create_withdraw_from_group_by_user(withdraw: schemas.TransactionIn, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+
+    #add logic for collecting deposit from a user
+    appendage = '256'
+    number_string = str(current_user.phone_number)
+    usable_phone_number_string = appendage + number_string
+    usable_phone_number = int(usable_phone_number_string)
+
+    #register withdraw
+    new_withdraw = models.Transaction(user_id=current_user.id, transaction_type="Withdraw", **withdraw.dict())
+    db.add(new_withdraw)
+    db.commit()
+    db.refresh(new_withdraw)
+
+    #get new account balance
+    withdrawdict = withdraw.dict()
+    received_withdraw = withdrawdict["amount"]
+    new_account_balance = current_user.account_balance - received_withdraw
+
+    # use a random dictionary to update the account balance
+    thisdict = {
+
+        "account_balance": 1964
+    }
+
+    thisdict["account_balance"] = new_account_balance
+
+    #update the account balance of the user
+    account_query = db.query(models.User).filter(models.User.id == current_user.id)
+    account_query.update(thisdict, synchronize_session=False)
+    db.commit()
+
+    #send message to user about balance update
+    #lets connect to box-uganda for messaging
+    url = "https://boxuganda.com/api.php"
+    data = {'user': f'{settings.box_uganda_username}', 'password': f'{settings.box_uganda_password}', 'sender': 'sambax',
+            'message': f'Hello {current_user.first_name}, you have withdrawn UgX{received_withdraw} from Sambax Finance Ltd.Your new Account balance is UgX{new_account_balance}',
+            'reciever': f'{usable_phone_number}'}
+    headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+    test_response = requests.post(url, data=data, headers=headers)
+    if test_response.status_code == 200:
+        print("message success")
+
+    return new_withdraw

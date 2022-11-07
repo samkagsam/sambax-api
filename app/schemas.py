@@ -281,7 +281,7 @@ class PayeeOut(BaseModel):
 
 
 #determines the format of payment information entered by admin about a user
-class GroupPaymentIn(BaseModel):
+class AdminGroupPaymentIn(BaseModel):
 
     amount: int
     phone_number: int
@@ -294,3 +294,21 @@ class GroupPaymentIn(BaseModel):
     amount: int
     week: int
     cycle: str
+
+
+#determines the format of payment information for group inquired by a user
+class GroupPaymentsInquiry(BaseModel):
+    cycle: str
+
+
+#determines the format of application sent back to admin after payee registration
+class GroupPaymentsInquiryOut(BaseModel):
+
+    userfirst_name: str
+    userlast_name: str
+    userphone_number: int
+    paymentamount: int
+    paymentcreated_at: datetime
+
+    class Config:
+        orm_mode = True

@@ -166,3 +166,4 @@ class GroupPayment(Base):
     group_id = Column(Integer, ForeignKey("groups.id", ondelete="CASCADE"), nullable=False)
     week = Column(Integer, nullable=False, server_default='0')
     cycle = Column(String, nullable=False, server_default='None')
+    transaction_type = Column(String, nullable=False, server_default='None')
