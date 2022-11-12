@@ -79,7 +79,7 @@ def create_group_payment_by_admin(payment: schemas.AdminGroupPaymentIn, db: Sess
 
     #register payment
     new_payment = models.GroupPayment(user_id=current_user.id, group_id=current_payee.group, amount=payment.amount,
-                                      week=payment.week, cycle=payment.cycle)
+                                      week=payment.week, cycle=payment.cycle, transaction_type="deposit")
 
     db.add(new_payment)
     db.commit()
@@ -156,7 +156,7 @@ def create_group_payment_by_user(payment: schemas.GroupPaymentIn, db: Session = 
 
     #register payment
     new_payment = models.GroupPayment(user_id=current_user.id, group_id=current_payee.group, amount=payment.amount,
-                                      week=payment.week, cycle=payment.cycle)
+                                      week=payment.week, cycle=payment.cycle, transaction_type="deposit")
 
     db.add(new_payment)
     db.commit()
@@ -243,49 +243,84 @@ def get_my_group_payments(cycle_given: schemas.GroupPaymentsInquiry, db: Session
     return list_details
 
 
-#creating a withdrawal from group
+#creating a withdrawal from group made by user
 @router.post("/group/withdrawals", status_code=status.HTTP_201_CREATED, response_model=schemas.TransactionOut)
-def create_withdraw_from_group_by_user(withdraw: schemas.TransactionIn, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+def create_withdraw_from_group_by_user(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
 
-    #add logic for collecting deposit from a user
-    appendage = '256'
-    number_string = str(current_user.phone_number)
-    usable_phone_number_string = appendage + number_string
-    usable_phone_number = int(usable_phone_number_string)
+    #first of check whether the user belongs to any saving group
+    #then check whether the user is eligible to withdraw money;  for the user to withdraw:
+              #-the user has to be the payee for that week in their saving group
+              #-the total amount of payments for that week has to be equal to the payout amount
+    #if all conditions are met, allow the user to withdraw, register the withdraw, update the group balance and message all
+    #all group members about the withdrawal
 
-    #register withdraw
-    new_withdraw = models.Transaction(user_id=current_user.id, transaction_type="Withdraw", **withdraw.dict())
-    db.add(new_withdraw)
-    db.commit()
-    db.refresh(new_withdraw)
+    #get the saving group of the user
+    current_payee = db.query(models.Payee).filter(models.Payee.user_id == current_user.id).first()
 
-    #get new account balance
-    withdrawdict = withdraw.dict()
-    received_withdraw = withdrawdict["amount"]
-    new_account_balance = current_user.account_balance - received_withdraw
+    if not current_payee:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"user does not belong to any saving group")
 
-    # use a random dictionary to update the account balance
-    thisdict = {
+    #get group details of user
+    usergroup = current_payee.group
+    userweek = current_payee.week
+    usercycle = current_payee.cycle
+    group_details_inquiry = db.query(models.Group).filter(models.Group.id == usergroup).first()
+    group_payout = group_details_inquiry.payout
 
-        "account_balance": 1964
-    }
 
-    thisdict["account_balance"] = new_account_balance
+    # check in group payments and see whether the user's payout week has been fully paid for
+    # to do this, first get the total number of payments made to the user's payout week
+    payments = db.query(models.GroupPayment).filter(models.GroupPayment.group_id == usergroup,
+                                                                     models.GroupPayment.week == userweek,
+                                                                     models.GroupPayment.cycle == usercycle,
+                                                                     models.GroupPayment.transaction_type == "deposit").all()
+    if not payments:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Withdrawal not allowed")
 
-    #update the account balance of the user
-    account_query = db.query(models.User).filter(models.User.id == current_user.id)
-    account_query.update(thisdict, synchronize_session=False)
-    db.commit()
+    sum_payments = 0
+    for payment in payments:
+        sum_payments += payment.amount
 
-    #send message to user about balance update
-    #lets connect to box-uganda for messaging
-    url = "https://boxuganda.com/api.php"
-    data = {'user': f'{settings.box_uganda_username}', 'password': f'{settings.box_uganda_password}', 'sender': 'sambax',
-            'message': f'Hello {current_user.first_name}, you have withdrawn UgX{received_withdraw} from Sambax Finance Ltd.Your new Account balance is UgX{new_account_balance}',
-            'reciever': f'{usable_phone_number}'}
-    headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
-    test_response = requests.post(url, data=data, headers=headers)
-    if test_response.status_code == 200:
-        print("message success")
+    if sum_payments == group_payout:
+        # add logic for collecting deposit from a user
+        appendage = '256'
+        number_string = str(current_user.phone_number)
+        usable_phone_number_string = appendage + number_string
+        usable_phone_number = int(usable_phone_number_string)
+
+        # register withdraw
+        new_withdraw = models.GroupPayment(user_id=current_user.id, group_id=usergroup, amount=group_payout,
+                                          week=userweek, cycle=usercycle, transaction_type="withdraw")
+        db.add(new_withdraw)
+        db.commit()
+        db.refresh(new_withdraw)
+
+        # get new group account balance
+        new_account_balance = 0
+
+        # use a random dictionary to update the account balance
+        thisdict = {
+
+            "account_balance": 1964
+        }
+
+        thisdict["account_balance"] = new_account_balance
+
+        # update the account balance of the group
+        group_account_query = db.query(models.Group).filter(models.Group.id == usergroup)
+        group_account_query.update(thisdict, synchronize_session=False)
+        db.commit()
+
+        # send message to all group members about group balance update
+        # lets connect to box-uganda for messaging
+        url = "https://boxuganda.com/api.php"
+        data = {'user': f'{settings.box_uganda_username}', 'password': f'{settings.box_uganda_password}',
+                'sender': 'sambax',
+                'message': f'Hello {current_user.first_name}, you have withdrawn UgX{group_account_query} from Sambax Finance Ltd.Your new Account balance is UgX{new_account_balance}',
+                'reciever': f'{usable_phone_number}'}
+        headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+        test_response = requests.post(url, data=data, headers=headers)
+        if test_response.status_code == 200:
+            print("message success")
 
     return new_withdraw

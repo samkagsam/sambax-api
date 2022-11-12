@@ -38,33 +38,57 @@ with Session.begin() as session:
         print("there are no results")
     for loan in loans:
         print("hello")
-        #format_string = "%Y-%m-%d %H:%M:%S.%f"
-        #expiry_date_string = str(loan.expiry_date)
-        #expiry_date_object = datetime.strptime(expiry_date_string, format_string)
-        #now_string = str(datetime.now())
-        #now = datetime.strptime(now_string, format_string)
-        #maturity_object = now-create_date
-        #loan_maturity = maturity_object.days
 
-        # get user
-        user = session.query(models.User).filter(models.User.id == loan.user_id).first()
-        # get user's phone number
-        appendage = '256'
-        number_string = str(user.phone_number)
-        usable_phone_number_string = appendage + number_string
-        usable_phone_number = int(usable_phone_number_string)
+        # print("hello")
+        #let us deal with date objects
+        format_string = "%Y-%m-%d %H:%M:%S.%f"
+        expiry_date_string = str(loan.expiry_date)
+        expiry_date_object = datetime.strptime(expiry_date_string, format_string)
+        now_string = str(datetime.now())
+        now = datetime.strptime(now_string, format_string)
 
-        # send reminder message to user
-        # lets connect to box-uganda for messaging
-        url = "https://boxuganda.com/api.php"
-        data = {'user': f'{settings.box_uganda_username}', 'password': f'{settings.box_uganda_password}',
-                'sender': 'sambax',
-                'message': f'Hello {user.first_name}, Your loan balance with Sambax Finance Ltd is UgX{loan.loan_balance}.Your loan expires on {loan.expiry_date}.Please pay today to clear the loan.Thanks',
-                'reciever': f'{usable_phone_number}'}
-        headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
-        test_response = requests.post(url, data=data, headers=headers)
-        if test_response.status_code == 200:
-            print("message success")
+        if now > expiry_date_object:
+
+            # get user
+            user = session.query(models.User).filter(models.User.id == loan.user_id).first()
+            # get user's phone number
+            appendage = '256'
+            number_string = str(user.phone_number)
+            usable_phone_number_string = appendage + number_string
+            usable_phone_number = int(usable_phone_number_string)
+
+            # send reminder message to user
+            # lets connect to box-uganda for messaging
+            url = "https://boxuganda.com/api.php"
+            data = {'user': f'{settings.box_uganda_username}', 'password': f'{settings.box_uganda_password}',
+                    'sender': 'sambax',
+                    'message': f'Hello {user.first_name},Your loan with Sambax Finance Ltd expired on {loan.expiry_date}.Your loan balance is UgX{loan.loan_balance}.Please pay today to clear the loan.Thanks',
+                    'reciever': f'{usable_phone_number}'}
+            headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+            test_response = requests.post(url, data=data, headers=headers)
+            if test_response.status_code == 200:
+                print("message success")
+        else:
+            # get user
+            user = session.query(models.User).filter(models.User.id == loan.user_id).first()
+            # get user's phone number
+            appendage = '256'
+            number_string = str(user.phone_number)
+            usable_phone_number_string = appendage + number_string
+            usable_phone_number = int(usable_phone_number_string)
+
+            # send reminder message to user
+            # lets connect to box-uganda for messaging
+            url = "https://boxuganda.com/api.php"
+            data = {'user': f'{settings.box_uganda_username}', 'password': f'{settings.box_uganda_password}',
+                    'sender': 'sambax',
+                    'message': f'Hello {user.first_name}, Your loan balance with Sambax Finance Ltd is UgX{loan.loan_balance}.Your loan expires on {loan.expiry_date}.Please pay today to clear the loan.Thanks',
+                    'reciever': f'{usable_phone_number}'}
+            headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+            test_response = requests.post(url, data=data, headers=headers)
+            if test_response.status_code == 200:
+                print("message success")
+
 
 
 

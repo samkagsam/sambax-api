@@ -31,8 +31,7 @@ Session = sessionmaker(engine)
 # we can now construct a Session() and include begin()/commit()/rollback()
 # at once
 with Session.begin() as session:
-    #session.add(some_object)
-    #session.add(some_other_object)
+
     loans = session.query(models.Loan).filter(models.Loan.running == True).all()
     if not loans:
         print("there are no results")

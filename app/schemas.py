@@ -312,3 +312,9 @@ class GroupPaymentsInquiryOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+#determines the format of information sent sent by a user to make a withdraw
+class GroupWithdraw(BaseModel):
+    week: int
+    cycle: str
