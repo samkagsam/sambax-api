@@ -299,16 +299,17 @@ class GroupPaymentIn(BaseModel):
 #determines the format of payment information for group inquired by a user
 class GroupPaymentsInquiry(BaseModel):
     cycle: str
+    week: int
 
 
 #determines the format of application sent back to admin after payee registration
 class GroupPaymentsInquiryOut(BaseModel):
 
-    userfirst_name: str
-    userlast_name: str
-    userphone_number: int
-    paymentamount: int
-    paymentcreated_at: datetime
+    first_name: str
+    last_name: str
+    phone_number: str
+    amount: str
+    created_at: datetime
 
     class Config:
         orm_mode = True
@@ -318,3 +319,25 @@ class GroupPaymentsInquiryOut(BaseModel):
 class GroupWithdraw(BaseModel):
     week: int
     cycle: str
+
+
+#determines the format of information sent back to a user about a group
+class GroupLandingPage(BaseModel):
+    usergroup: str
+    group_payout: str
+    group_account_balance: str
+
+    class Config:
+        orm_mode = True
+
+
+#determines the format of application sent back to admin after payee registration
+class GroupMembers(BaseModel):
+
+    first_name: str
+    last_name: str
+    phone_number: str
+
+
+    class Config:
+        orm_mode = True
