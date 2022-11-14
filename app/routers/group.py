@@ -512,8 +512,10 @@ def get_group_members( db: Session = Depends(get_db), current_user: int = Depend
     members_list = []
 
     if not current_payee:
+        members_list = []
+        #raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You do not belong to any saving group")
 
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You do not belong to any saving group")
+
     else:
         # get the members of the group
         members = db.query(models.Payee).filter(models.Payee.group == current_payee.group).all()
