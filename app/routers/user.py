@@ -226,9 +226,17 @@ def update_user_password(givenPassword: schemas.PasswordChange, db: Session = De
     password_query.update(thisdict, synchronize_session=False)
     db.commit()
 
-
-
     return current_user
+
+
+#get one user
+@router.post("/admin/get_user_id", response_model=schemas.UserOut)
+def admin_get_user_id(given_number: schemas.PhoneNumberRecover, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
+    user = db.query(models.User).filter(models.User.phone_number == given_number.phone_number).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"user with that phone number was not found")
+
+    return user
 
 
 
