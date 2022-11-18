@@ -302,7 +302,7 @@ class GroupPaymentsInquiry(BaseModel):
     week: int
 
 
-#determines the format of application sent back to admin after payee registration
+#determines the format of information sent sent back to a user about group payments
 class GroupPaymentsInquiryOut(BaseModel):
 
     first_name: str

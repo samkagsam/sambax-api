@@ -481,16 +481,16 @@ def create_withdraw_from_group_by_admin(withdraw_inquirer: schemas.PhoneNumberRe
 def saving_group_landing( db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     # get the saving group of the user
     current_payee = db.query(models.Payee).filter(models.Payee.user_id == current_user.id).first()
-    usergroup = ""
-    group_payout = ""
-    group_account_balance = ""
+    #usergroup = ""
+    #group_payout = ""
+    #group_account_balance = ""
 
 
     if not current_payee:
-        usergroup = "You do not belong to any saving group"
-        group_payout = "You do not belong to any saving group"
-        group_account_balance = "You do not belong to any saving group"
-        #raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"user does not belong to any saving group")
+        #usergroup = "You do not belong to any saving group"
+        #group_payout = "You do not belong to any saving group"
+        #group_account_balance = "You do not belong to any saving group"
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"user does not belong to any saving group")
     else:
         usergroup = str(current_payee.group)
         group_details_inquiry = db.query(models.Group).filter(models.Group.id == current_payee.group).first()
