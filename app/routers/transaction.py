@@ -177,3 +177,56 @@ def create_deposit_by_admin(deposit: schemas.AdminPayment, db: Session = Depends
         print("message success")
 
     return new_deposit
+
+
+#creating a withdraw by admin
+@router.post("/admin/withdraws", status_code=status.HTTP_201_CREATED, response_model=schemas.TransactionOut)
+def create_deposit_by_admin(withdraw: schemas.AdminPayment, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
+    # find the user
+    current_user = db.query(models.User).filter(models.User.phone_number == withdraw.phone_number).first()
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"user with that phone number was not found")
+
+    #add logic for collecting deposit from a user
+    appendage = '256'
+    number_string = str(current_user.phone_number)
+    usable_phone_number_string = appendage + number_string
+    usable_phone_number = int(usable_phone_number_string)
+
+    #register withdraw
+    new_withdraw = models.Transaction(user_id=current_user.id, transaction_type="withdraw", amount=withdraw.amount)
+    db.add(new_withdraw)
+    db.commit()
+    db.refresh(new_withdraw)
+
+    #get new account balance
+    withdrawdict = withdraw.dict()
+    received_withdraw = withdrawdict["amount"]
+    new_account_balance = current_user.account_balance - received_withdraw
+
+    # use a random dictionary to update the loan balance
+    thisdict = {
+
+        "account_balance": 1964
+    }
+
+    thisdict["account_balance"] = new_account_balance
+
+    #update the account balance of the user
+    account_query = db.query(models.User).filter(models.User.id == current_user.id)
+    account_query.update(thisdict, synchronize_session=False)
+    db.commit()
+
+    #send message to user about balance update
+    #lets connect to box-uganda for messaging
+    url = "https://boxuganda.com/api.php"
+    data = {'user': f'{settings.box_uganda_username}', 'password': f'{settings.box_uganda_password}', 'sender': 'sambax',
+            'message': f'Hello {current_user.first_name}, you have withdrawn UgX{received_withdraw} from Sambax Finance Ltd.Your new Account balance is UgX{new_account_balance}',
+            'reciever': f'{usable_phone_number}'}
+    headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+    test_response = requests.post(url, data=data, headers=headers)
+    if test_response.status_code == 200:
+        print("message success")
+
+    return new_withdraw
+
