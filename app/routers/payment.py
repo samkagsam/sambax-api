@@ -49,11 +49,10 @@ def create_payment_by_user(payment: schemas.Payment, db: Session = Depends(get_d
     usable_phone_number_string = appendage + number_string
     usable_phone_number = int(usable_phone_number_string)
 
-    #register payment
-    new_payment = models.Payment(user_id=current_user.id, loan_id=current_loan.id, **payment.dict())
-    db.add(new_payment)
-    db.commit()
-    db.refresh(new_payment)
+
+
+    #get old loan balance
+    old_loan_balance = current_loan.loan_balance
 
     #get new loan balance
     paymentdict = payment.dict()
@@ -72,6 +71,13 @@ def create_payment_by_user(payment: schemas.Payment, db: Session = Depends(get_d
     loan_query = db.query(models.Loan).filter(models.Loan.user_id == current_user.id, models.Loan.running == True)
     loan_query.update(thisdict, synchronize_session=False)
     db.commit()
+
+    # register payment
+    new_payment = models.Payment(user_id=current_user.id, loan_id=current_loan.id, **payment.dict(),
+                                 old_balance=old_loan_balance, new_balance=new_loan_balance)
+    db.add(new_payment)
+    db.commit()
+    db.refresh(new_payment)
 
     #turn off the loan if the loan balance of the current user is zero
     loan_off_query = db.query(models.Loan).filter(models.Loan.user_id == current_user.id, models.Loan.running == True, models.Loan.loan_balance == 0)
@@ -163,13 +169,11 @@ def create_payment_by_admin(payment: schemas.AdminPayment, db: Session = Depends
     usable_phone_number_string = appendage + number_string
     usable_phone_number = int(usable_phone_number_string)
 
-    #register payment
-    new_payment = models.Payment(user_id=current_user.id, loan_id=current_loan.id, amount=payment.amount)
-    db.add(new_payment)
-    db.commit()
-    db.refresh(new_payment)
+
 
     #get new loan balance
+    old_loan_balance = current_loan.loan_balance
+    #print(old_loan_balance)
     paymentdict = payment.dict()
     received_payment = paymentdict["amount"]
     new_loan_balance = current_loan.loan_balance - received_payment
@@ -186,6 +190,13 @@ def create_payment_by_admin(payment: schemas.AdminPayment, db: Session = Depends
     loan_query = db.query(models.Loan).filter(models.Loan.user_id == current_user.id, models.Loan.running == True)
     loan_query.update(thisdict, synchronize_session=False)
     db.commit()
+
+    # register payment
+    new_payment = models.Payment(user_id=current_user.id, loan_id=current_loan.id, amount=payment.amount,
+                                 old_balance=old_loan_balance, new_balance=new_loan_balance)
+    db.add(new_payment)
+    db.commit()
+    db.refresh(new_payment)
 
     #turn off the loan if the loan balance of the current user is zero
     loan_off_query = db.query(models.Loan).filter(models.Loan.user_id == current_user.id, models.Loan.running == True, models.Loan.loan_balance == 0)

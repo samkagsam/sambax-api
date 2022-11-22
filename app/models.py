@@ -111,6 +111,8 @@ class Payment(Base):
     created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     loan_id = Column(Integer, ForeignKey("loans.id", ondelete="CASCADE"), nullable=False)
+    old_balance = Column(Integer, nullable=False, server_default='0')
+    new_balance = Column(Integer, nullable=False, server_default='0')
     owner = relationship("Loan")
 
 
