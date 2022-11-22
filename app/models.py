@@ -136,6 +136,8 @@ class Transaction(Base):
     transaction_type = Column(String, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
+    old_balance = Column(Integer, nullable=False, server_default='0')
+    new_balance = Column(Integer, nullable=False, server_default='0')
 
 
 class Group(Base):

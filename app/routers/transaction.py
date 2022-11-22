@@ -34,11 +34,10 @@ def create_deposit_by_user(deposit: schemas.TransactionIn, db: Session = Depends
     usable_phone_number_string = appendage + number_string
     usable_phone_number = int(usable_phone_number_string)
 
-    #register deposit
-    new_deposit = models.Transaction(user_id=current_user.id, transaction_type="deposit", **deposit.dict())
-    db.add(new_deposit)
-    db.commit()
-    db.refresh(new_deposit)
+
+
+    #get old account balance
+    old_account_balance = current_user.account_balance
 
     #get new account balance
     depositdict = deposit.dict()
@@ -57,6 +56,13 @@ def create_deposit_by_user(deposit: schemas.TransactionIn, db: Session = Depends
     account_query = db.query(models.User).filter(models.User.id == current_user.id)
     account_query.update(thisdict, synchronize_session=False)
     db.commit()
+
+    # register deposit
+    new_deposit = models.Transaction(user_id=current_user.id, transaction_type="deposit",
+                                     old_balance=old_account_balance, new_balance=new_account_balance, **deposit.dict())
+    db.add(new_deposit)
+    db.commit()
+    db.refresh(new_deposit)
 
     #send message to user about balance update
     #lets connect to box-uganda for messaging
@@ -82,11 +88,10 @@ def create_withdraw_by_user(withdraw: schemas.TransactionIn, db: Session = Depen
     usable_phone_number_string = appendage + number_string
     usable_phone_number = int(usable_phone_number_string)
 
-    #register withdraw
-    new_withdraw = models.Transaction(user_id=current_user.id, transaction_type="Withdraw", **withdraw.dict())
-    db.add(new_withdraw)
-    db.commit()
-    db.refresh(new_withdraw)
+
+
+    #get old account balance
+    old_account_balance = current_user.account_balance
 
     #get new account balance
     withdrawdict = withdraw.dict()
@@ -105,6 +110,13 @@ def create_withdraw_by_user(withdraw: schemas.TransactionIn, db: Session = Depen
     account_query = db.query(models.User).filter(models.User.id == current_user.id)
     account_query.update(thisdict, synchronize_session=False)
     db.commit()
+
+    # register withdraw
+    new_withdraw = models.Transaction(user_id=current_user.id, transaction_type="Withdraw",
+                                      old_balance=old_account_balance, new_balance=new_account_balance, **withdraw.dict())
+    db.add(new_withdraw)
+    db.commit()
+    db.refresh(new_withdraw)
 
     #send message to user about balance update
     #lets connect to box-uganda for messaging
@@ -141,11 +153,10 @@ def create_deposit_by_admin(deposit: schemas.AdminPayment, db: Session = Depends
     usable_phone_number_string = appendage + number_string
     usable_phone_number = int(usable_phone_number_string)
 
-    #register deposit
-    new_deposit = models.Transaction(user_id=current_user.id, transaction_type="deposit", amount=deposit.amount)
-    db.add(new_deposit)
-    db.commit()
-    db.refresh(new_deposit)
+
+
+    #get old account balance
+    old_account_balance = current_user.account_balance
 
     #get new account balance
     depositdict = deposit.dict()
@@ -164,6 +175,13 @@ def create_deposit_by_admin(deposit: schemas.AdminPayment, db: Session = Depends
     account_query = db.query(models.User).filter(models.User.id == current_user.id)
     account_query.update(thisdict, synchronize_session=False)
     db.commit()
+
+    # register deposit
+    new_deposit = models.Transaction(user_id=current_user.id, transaction_type="deposit", amount=deposit.amount,
+                                     old_balance=old_account_balance, new_balance=new_account_balance)
+    db.add(new_deposit)
+    db.commit()
+    db.refresh(new_deposit)
 
     #send message to user about balance update
     #lets connect to box-uganda for messaging
@@ -193,11 +211,10 @@ def create_deposit_by_admin(withdraw: schemas.AdminPayment, db: Session = Depend
     usable_phone_number_string = appendage + number_string
     usable_phone_number = int(usable_phone_number_string)
 
-    #register withdraw
-    new_withdraw = models.Transaction(user_id=current_user.id, transaction_type="withdraw", amount=withdraw.amount)
-    db.add(new_withdraw)
-    db.commit()
-    db.refresh(new_withdraw)
+
+
+    #get old account balance
+    old_account_balance = current_user.account_balance
 
     #get new account balance
     withdrawdict = withdraw.dict()
@@ -216,6 +233,13 @@ def create_deposit_by_admin(withdraw: schemas.AdminPayment, db: Session = Depend
     account_query = db.query(models.User).filter(models.User.id == current_user.id)
     account_query.update(thisdict, synchronize_session=False)
     db.commit()
+
+    # register withdraw
+    new_withdraw = models.Transaction(user_id=current_user.id, transaction_type="withdraw", amount=withdraw.amount,
+                                      old_balance=old_account_balance, new_balance=new_account_balance)
+    db.add(new_withdraw)
+    db.commit()
+    db.refresh(new_withdraw)
 
     #send message to user about balance update
     #lets connect to box-uganda for messaging
