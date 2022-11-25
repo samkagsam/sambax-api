@@ -13,7 +13,7 @@ router = APIRouter(
 )
 
 
-#creating a single group
+#creating a single group by admin
 @router.post("/admin/groups", status_code=status.HTTP_201_CREATED, response_model=schemas.GroupOut)
 def create_group(group: schemas.GroupCreate, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
 
@@ -535,3 +535,17 @@ def get_group_members( db: Session = Depends(get_db), current_user: int = Depend
             members_list.append(member_details2)
 
     return members_list
+
+
+#creating a group by user
+@router.post("/groups", status_code=status.HTTP_201_CREATED, response_model=schemas.GroupOut)
+def create_group(group: schemas.GroupCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+
+    #first check if the user already belongs to a group
+
+    #create group
+    new_group = models.Group(group_admin=current_user.id, cycle=1, cycle_change=group.payout, **group.dict())
+    db.add(new_group)
+    db.commit()
+    db.refresh(new_group)
+    return new_group

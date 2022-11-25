@@ -147,6 +147,10 @@ class Group(Base):
     payout = Column(Integer, nullable=False, server_default='0')
     account_balance = Column(Integer, nullable=False, server_default='0')
     created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
+    group_admin = Column(Integer, nullable=False, server_default='0')
+    cycle_balance = Column(Integer, nullable=False, server_default='0')
+    cycle_change = Column(Integer, nullable=False, server_default='0')
+    cycle = Column(Integer, nullable=False, server_default='0')
 
 
 class Payee(Base):
@@ -158,6 +162,8 @@ class Payee(Base):
     user_id = Column(Integer, nullable=False, server_default='0')
     cycle = Column(String, nullable=False, server_default='None')
     created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
+    approval_status = Column(String, nullable=False, server_default='None')
+    approval_count = Column(Integer, nullable=False, server_default='0')
 
 
 class GroupPayment(Base):
