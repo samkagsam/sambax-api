@@ -538,14 +538,31 @@ def get_group_members( db: Session = Depends(get_db), current_user: int = Depend
 
 
 #creating a group by user
-@router.post("/groups", status_code=status.HTTP_201_CREATED, response_model=schemas.GroupOut)
-def create_group(group: schemas.GroupCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+@router.post("/groups", status_code=status.HTTP_201_CREATED, response_model=schemas.PayeeOut)
+def user_create_saving_group(group: schemas.GroupCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
 
-    #first check if the user already belongs to a group
+    #first check whether the user is already a group admin
+    group_inquiry = db.query(models.Group).filter(models.Group.group_admin == current_user.id).first()
+
+    if group_inquiry:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You already created a saving group")
+
 
     #create group
-    new_group = models.Group(group_admin=current_user.id, cycle=1, cycle_change=group.payout, **group.dict())
+    new_group = models.Group(group_admin=current_user.id, cycle=1, cycle_change=group.payout, week=1, **group.dict())
     db.add(new_group)
     db.commit()
     db.refresh(new_group)
-    return new_group
+
+    #automatically add the creator as the first payee
+    #first get the group just created
+    creator_group = db.query(models.Group).filter(models.Group.group_admin==current_user.id).first()
+    creator_group_id = creator_group.id
+
+    #add the creator as a payee
+    new_payee = models.Payee(week=1, group=creator_group_id, user_id=current_user.id, cycle="A", approval_status="approved")
+    db.add(new_payee)
+    db.commit()
+    db.refresh(new_payee)
+
+    return new_payee

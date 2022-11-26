@@ -151,6 +151,8 @@ class Group(Base):
     cycle_balance = Column(Integer, nullable=False, server_default='0')
     cycle_change = Column(Integer, nullable=False, server_default='0')
     cycle = Column(Integer, nullable=False, server_default='0')
+    week = Column(Integer, nullable=False, server_default='0')
+
 
 
 class Payee(Base):
