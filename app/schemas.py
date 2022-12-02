@@ -268,6 +268,13 @@ class PayeeCreate(BaseModel):
     cycle: str
 
 
+#determines the type of information received about a payee from a user admin
+class UserPayeeCreate(BaseModel):
+    phone_number: int
+    week_no: int
+
+
+
 #determines the format of application sent back to admin after payee registration
 class PayeeOut(BaseModel):
     id: int
@@ -337,6 +344,36 @@ class GroupMembers(BaseModel):
     first_name: str
     last_name: str
     phone_number: str
+
+
+    class Config:
+        orm_mode = True
+
+
+#determines the format of information sent back to user on seeking group requests
+class GroupRequestOut(BaseModel):
+    request_id:str
+    group_number: str
+    admin_first_name: str
+    admin_last_name: str
+    admin_phone_number:str
+
+    class Config:
+        orm_mode = True
+
+
+#determines the format of information sent  to api on approving request
+class ApprovalRequestIn(BaseModel):
+    id:int
+
+
+
+#determines the format of information sent back to user on approving request
+class ApprovalRequestOut(BaseModel):
+    id:int
+    group: int
+    approval_status: str
+    approval_count: int
 
 
     class Config:

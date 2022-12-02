@@ -560,9 +560,171 @@ def user_create_saving_group(group: schemas.GroupCreate, db: Session = Depends(g
     creator_group_id = creator_group.id
 
     #add the creator as a payee
-    new_payee = models.Payee(week=1, group=creator_group_id, user_id=current_user.id, cycle="A", approval_status="approved")
+    new_payee = models.Payee(week=1, group=creator_group_id, user_id=current_user.id, cycle="A", approval_status="approved",approval_count=1)
     db.add(new_payee)
     db.commit()
     db.refresh(new_payee)
 
     return new_payee
+
+
+#creating a payee for a group by a user admin
+@router.post("/payees", status_code=status.HTTP_201_CREATED, response_model=schemas.PayeeOut)
+def user_create_group_payee(payee: schemas.UserPayeeCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    #first get the group where this user is an admin
+    user_group = db.query(models.Group).filter(models.Group.group_admin == current_user.id).first()
+
+    if not user_group:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"You are not admin to any saving group")
+
+    # get the id of intended payee
+    intended_payee = db.query(models.User).filter(models.User.phone_number == payee.phone_number).first()
+    if not intended_payee:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Phone number is not registered with Sambax Finance")
+
+
+    #first check whether this intended payee is already an approved member of this group
+    payee_inquiry = db.query(models.Payee).filter(models.Payee.user_id==intended_payee.id, models.Payee.group==user_group.id).first()
+
+    if payee_inquiry:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"user already belongs to this saving group")
+
+
+    #new_payee = models.Payee(**thisdict)
+    new_payee = models.Payee(week=payee.week_no, group=user_group.id, user_id=intended_payee.id, cycle="A",
+                             approval_status="disapproved")
+    db.add(new_payee)
+    db.commit()
+    db.refresh(new_payee)
+    return new_payee
+
+
+#approving group request by user
+@router.post("/approve_request", status_code=status.HTTP_201_CREATED, response_model=schemas.ApprovalRequestOut)
+def user_approve_group_request(id_given:schemas.ApprovalRequestIn, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    #first check for the request
+    request_inquiry = db.query(models.Payee).filter(models.Payee.id==id_given.id).first()
+
+    if not request_inquiry:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You have not received a request to join a group")
+
+    repeat_check = db.query(models.Payee).filter(models.Payee.id==id_given.id, models.Payee.approval_count==1).first()
+
+    if repeat_check:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail=f"You have already approved the request")
+
+    #let us now approve the request, use a dictionary to update the request status
+    # use a random dictionary to update the loan balance
+    #"approval_count": 0
+    thisdict = {
+
+        "approval_status": "yyy",
+        "approval_count":0
+    }
+
+    thisdict["approval_status"] = "approved"
+    thisdict["approval_count"] = 1
+
+    # update the loan balance of the user
+    payee_query = db.query(models.Payee).filter(models.Payee.id == id_given.id)
+    payee_query.update(thisdict, synchronize_session=False)
+    db.commit()
+
+    #now let us update cycle change
+    #cycle_change = group_payout x no_of_group_members
+    #let us first count the group members
+    group_members = db.query(models.Payee).filter(models.Payee.group==request_inquiry.group,
+                                                  models.Payee.approval_status=="approved",
+                                                  models.Payee.approval_count==1).all()
+    number_of_members = 0
+    for group_member in group_members:
+        number_of_members += 1
+
+    #let us find the payout for this group
+    group_look = db.query(models.Group).filter(models.Group.id==request_inquiry.group).first()
+    current_group_payout = group_look.payout
+
+    new_cycle_change = current_group_payout * number_of_members
+
+    #let us update cycle change with new value using dictionary
+    thatdict = {
+
+
+        "cycle_change": 0
+    }
+
+
+    thatdict["cycle_change"] = new_cycle_change
+
+    # update the loan balance of the user
+    group_query = db.query(models.Group).filter(models.Group.id==request_inquiry.group)
+    group_query.update(thatdict, synchronize_session=False)
+    db.commit()
+
+    #let us message all the group members about the new member who has joined
+    for group_member in group_members:
+        user = db.query(models.User).filter(models.User.id==group_member.user_id).first()
+
+        # send message to user about balance update
+        appendage2 = '256'
+        number_string2 = str(user.phone_number)
+        usable_phone_number_string2 = appendage2 + number_string2
+        usable_phone_number2 = int(usable_phone_number_string2)
+
+        # lets connect to box-uganda for messaging
+        url = "https://boxuganda.com/api.php"
+        data = {'user': f'{settings.box_uganda_username}', 'password': f'{settings.box_uganda_password}',
+                'sender': 'sambax',
+                'message': f'Hello, {user.first_name},{current_user.first_name}, 0{current_user.phone_number} has joined saving group{request_inquiry.group} at Sambax Finance Ltd.',
+                'reciever': f'{usable_phone_number2}'}
+        headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+        test_response = requests.post(url, data=data, headers=headers)
+        if test_response.status_code == 200:
+            print("message success")
+
+
+
+    return request_inquiry
+
+
+#retrieving all group join requests by a logged-in user
+@router.get("/group_requests", response_model=List[schemas.GroupRequestOut])
+def get_group_requests(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    
+    # let us check for requests
+    group_requests = db.query(models.Payee).filter(models.Payee.user_id == current_user.id,
+                                                  models.Payee.approval_status == "disapproved",
+                                                  models.Payee.approval_count == 0).all()
+    if not group_requests:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You have no group join request")
+
+    request_list = []
+
+    for group_request in group_requests:
+        given_group = db.query(models.Group).filter(models.Group.id==group_request.group).first()
+        group_admin = given_group.group_admin
+
+        #lets find the credentials of the group admin
+        group_admin_credentials = db.query(models.User).filter(models.User.id==group_admin).first()
+        admin_first_name = group_admin_credentials.first_name
+        admin_last_name = group_admin_credentials.last_name
+        admin_phone_number = group_admin_credentials.phone_number
+        request_id_string = str(group_request.id)
+        group_number_string = str(given_group.id)
+
+        # lets add a zero to the phone number
+        appendage = '0'
+        number_string = str(admin_phone_number)
+        usable_phone_number_string = appendage + number_string
+
+        request_details = {"request_id":request_id_string,
+                           "group_number":group_number_string,
+                           "admin_first_name": admin_first_name,
+                           "admin_last_name": admin_last_name,
+                           "admin_phone_number": usable_phone_number_string,
+
+                           }
+        request_list.append(request_details)
+
+    return request_list

@@ -56,7 +56,9 @@ def create_payment_by_user(payment: schemas.Payment, db: Session = Depends(get_d
 
     #get new loan balance
     paymentdict = payment.dict()
-    received_payment = paymentdict["amount"]
+    #received_payment = paymentdict["amount"]
+    #let me try to protect transaction until mtn gives us api access
+    received_payment = 0
     new_loan_balance = current_loan.loan_balance - received_payment
 
     # use a random dictionary to update the loan balance
@@ -73,7 +75,9 @@ def create_payment_by_user(payment: schemas.Payment, db: Session = Depends(get_d
     db.commit()
 
     # register payment
-    new_payment = models.Payment(user_id=current_user.id, loan_id=current_loan.id, **payment.dict(),
+    #new_payment = models.Payment(user_id=current_user.id, loan_id=current_loan.id, **payment.dict(),
+    #                             old_balance=old_loan_balance, new_balance=new_loan_balance)
+    new_payment = models.Payment(user_id=current_user.id, loan_id=current_loan.id, amount=0,
                                  old_balance=old_loan_balance, new_balance=new_loan_balance)
     db.add(new_payment)
     db.commit()

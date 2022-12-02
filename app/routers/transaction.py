@@ -41,7 +41,9 @@ def create_deposit_by_user(deposit: schemas.TransactionIn, db: Session = Depends
 
     #get new account balance
     depositdict = deposit.dict()
-    received_deposit = depositdict["amount"]
+    #received_deposit = depositdict["amount"]
+    #let me try to protect our system until mtn gives us access to their api
+    received_deposit = 0
     new_account_balance = current_user.account_balance + received_deposit
 
     # use a random dictionary to update the loan balance
@@ -58,8 +60,10 @@ def create_deposit_by_user(deposit: schemas.TransactionIn, db: Session = Depends
     db.commit()
 
     # register deposit
+    #new_deposit = models.Transaction(user_id=current_user.id, transaction_type="deposit",
+   #                                  old_balance=old_account_balance, new_balance=new_account_balance, **deposit.dict())
     new_deposit = models.Transaction(user_id=current_user.id, transaction_type="deposit",
-                                     old_balance=old_account_balance, new_balance=new_account_balance, **deposit.dict())
+                                     old_balance=old_account_balance, new_balance=new_account_balance, amount=0)
     db.add(new_deposit)
     db.commit()
     db.refresh(new_deposit)
@@ -95,7 +99,9 @@ def create_withdraw_by_user(withdraw: schemas.TransactionIn, db: Session = Depen
 
     #get new account balance
     withdrawdict = withdraw.dict()
-    received_withdraw = withdrawdict["amount"]
+    #received_withdraw = withdrawdict["amount"]
+    #let me try to protect the system until mtn gives us access to their api
+    received_withdraw = 0
     new_account_balance = current_user.account_balance - received_withdraw
 
     # use a random dictionary to update the account balance
@@ -112,8 +118,11 @@ def create_withdraw_by_user(withdraw: schemas.TransactionIn, db: Session = Depen
     db.commit()
 
     # register withdraw
+    #new_withdraw = models.Transaction(user_id=current_user.id, transaction_type="Withdraw",
+    #                               old_balance=old_account_balance, new_balance=new_account_balance, **withdraw.dict())
     new_withdraw = models.Transaction(user_id=current_user.id, transaction_type="Withdraw",
-                                      old_balance=old_account_balance, new_balance=new_account_balance, **withdraw.dict())
+                                      old_balance=old_account_balance, new_balance=new_account_balance,
+                                      amount=0)
     db.add(new_withdraw)
     db.commit()
     db.refresh(new_withdraw)
