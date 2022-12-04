@@ -35,7 +35,7 @@ def create_application(application:schemas.Application, db: Session = Depends(ge
 
 
 #getting all applications, used by admin
-@router.get("/admin/applications", response_model=List[schemas.ApplicationOut])
+@router.get("/admin/applications", response_model=List[schemas.AdminApplicationOut])
 def get_applications(db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
     applications = db.query(models.Application).all()
     return applications
