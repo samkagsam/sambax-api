@@ -27,7 +27,13 @@ def create_application(application:schemas.Application, db: Session = Depends(ge
 
     if current_loan:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"you already have a running loan. you can't apply")
-    new_application = models.Application(user_id=current_user.id, **application.dict())
+    thisdict = application.dict()
+    thisdict["first_name"] = current_user.first_name
+    thisdict["last_name"] = current_user.last_name
+    thisdict["contact_one"] = current_user.phone_number
+
+    #new_application = models.Application(user_id=current_user.id, **application.dict())
+    new_application = models.Application(user_id=current_user.id, **thisdict)
     db.add(new_application)
     db.commit()
     db.refresh(new_application)
