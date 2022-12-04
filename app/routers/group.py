@@ -614,6 +614,15 @@ def user_approve_group_request(id_given:schemas.ApprovalRequestIn, db: Session =
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail=f"You have already approved the request")
 
+    #let us check whether there's already someone approved for the given week in the given group
+    week_inquiry = db.query(models.Payee).filter(models.Payee.group==request_inquiry.group,
+                                                 models.Payee.week==request_inquiry.week,
+                                                 models.Payee.approval_status=="approved",
+                                                 models.Payee.approval_count==1).first()
+    if week_inquiry:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail=f"There's already someone assigned to that week")
+
     #let us now approve the request, use a dictionary to update the request status
     # use a random dictionary to update the loan balance
     #"approval_count": 0
@@ -626,7 +635,7 @@ def user_approve_group_request(id_given:schemas.ApprovalRequestIn, db: Session =
     thisdict["approval_status"] = "approved"
     thisdict["approval_count"] = 1
 
-    # update the loan balance of the user
+    # perform the request approval
     payee_query = db.query(models.Payee).filter(models.Payee.id == id_given.id)
     payee_query.update(thisdict, synchronize_session=False)
     db.commit()
@@ -657,7 +666,7 @@ def user_approve_group_request(id_given:schemas.ApprovalRequestIn, db: Session =
 
     thatdict["cycle_change"] = new_cycle_change
 
-    # update the loan balance of the user
+    # update the cycle change of the group
     group_query = db.query(models.Group).filter(models.Group.id==request_inquiry.group)
     group_query.update(thatdict, synchronize_session=False)
     db.commit()
@@ -686,6 +695,52 @@ def user_approve_group_request(id_given:schemas.ApprovalRequestIn, db: Session =
 
 
     return request_inquiry
+
+
+#disapproving group join request
+@router.post("/disapprove_request", status_code=status.HTTP_201_CREATED, response_model=schemas.ApprovalRequestOut)
+def user_disapprove_group_request(id_given:schemas.ApprovalRequestIn, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    #first check for the request
+    request_inquiry = db.query(models.Payee).filter(models.Payee.id==id_given.id).first()
+
+    if not request_inquiry:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You have not received a request to join a group")
+
+    repeat_check = db.query(models.Payee).filter(models.Payee.id==id_given.id, models.Payee.approval_count==1).first()
+
+    if repeat_check:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail=f"You have already disapproved the request")
+
+
+    #let us now approve the request, use a dictionary to update the request status
+    # use a random dictionary to update the loan balance
+    #"approval_count": 0
+    thisdict = {
+
+        "approval_status": "yyy",
+        "approval_count":0
+    }
+
+    thisdict["approval_status"] = "disapproved"
+    thisdict["approval_count"] = 1
+
+    # perform the request approval
+    payee_query = db.query(models.Payee).filter(models.Payee.id == id_given.id)
+    payee_query.update(thisdict, synchronize_session=False)
+    db.commit()
+
+
+
+    #let us update cycle change with new value using dictionary
+    thatdict = {
+
+
+        "cycle_change": 0
+    }
+
+    return request_inquiry
+
 
 
 #retrieving all group join requests by a logged-in user

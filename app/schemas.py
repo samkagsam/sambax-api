@@ -137,6 +137,34 @@ class ApplicationOut(BaseModel):
         orm_mode = True
 
 
+#determines the format of application sent back to admin on inquiry
+class AdminApplicationOut(BaseModel):
+    id: int
+    first_name: str
+    middle_name: str
+    last_name: str
+    gender: str
+    date_of_birth: str
+    home_address: str
+    work_address: str
+    nature_of_business: str
+    contact_one: int
+    contact_two: int
+    requested_loan_amount: int
+    guarantor_one: str
+    guarantor_one_contact: int
+    guarantor_one_relationship: str
+    guarantor_two: str
+    guarantor_two_contact: int
+    guarantor_two_relationship: str
+    customer_id_url: str
+    customer_image_url: str
+    purpose_for_loan: str
+
+    class Config:
+        orm_mode = True
+
+
 #determines the format of payment information received from a user
 class Payment(BaseModel):
 
