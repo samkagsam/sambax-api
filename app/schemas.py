@@ -299,7 +299,7 @@ class PayeeCreate(BaseModel):
 #determines the type of information received about a payee from a user admin
 class UserPayeeCreate(BaseModel):
     phone_number: int
-    week_no: int
+
 
 
 
@@ -331,6 +331,12 @@ class GroupPaymentIn(BaseModel):
     cycle: str
 
 
+#determines the format of payment information for group entered by a user in version code 6
+class NewGroupPaymentIn(BaseModel):
+    amount: int
+    group_id: int
+
+
 #determines the format of payment information for group inquired by a user
 class GroupPaymentsInquiry(BaseModel):
     cycle: str
@@ -355,6 +361,12 @@ class GroupWithdraw(BaseModel):
     week: int
     cycle: str
 
+#determines the format of information sent sent by a user to make a withdraw in version code 6
+class NewGroupWithdraw(BaseModel):
+    group_id: int
+
+
+
 
 #determines the format of information sent back to a user about a group
 class GroupLandingPage(BaseModel):
@@ -376,6 +388,20 @@ class GroupMembers(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+#determines the format of data sent about group members in Version Code 6
+class AllGroupMembers(BaseModel):
+
+    first_name: str
+    last_name: str
+    phone_number: str
+    user_week: str
+
+
+    class Config:
+        orm_mode = True
+
 
 
 #determines the format of information sent back to user on seeking group requests
@@ -404,5 +430,11 @@ class ApprovalRequestOut(BaseModel):
     approval_count: int
 
 
+    class Config:
+        orm_mode = True
+
+
+class UserGroupsOut(BaseModel):
+    id: int
     class Config:
         orm_mode = True
