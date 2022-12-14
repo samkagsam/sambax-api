@@ -78,7 +78,8 @@ def create_payment_by_user(payment: schemas.Payment, db: Session = Depends(get_d
     #new_payment = models.Payment(user_id=current_user.id, loan_id=current_loan.id, **payment.dict(),
     #                             old_balance=old_loan_balance, new_balance=new_loan_balance)
     new_payment = models.Payment(user_id=current_user.id, loan_id=current_loan.id, amount=0,
-                                 old_balance=old_loan_balance, new_balance=new_loan_balance)
+                                 old_balance=old_loan_balance, new_balance=new_loan_balance,
+                                 transaction_type="debit", made_by="self")
     db.add(new_payment)
     db.commit()
     db.refresh(new_payment)
@@ -197,7 +198,8 @@ def create_payment_by_admin(payment: schemas.AdminPayment, db: Session = Depends
 
     # register payment
     new_payment = models.Payment(user_id=current_user.id, loan_id=current_loan.id, amount=payment.amount,
-                                 old_balance=old_loan_balance, new_balance=new_loan_balance)
+                                 old_balance=old_loan_balance, new_balance=new_loan_balance,
+                                 transaction_type="debit", made_by="admin")
     db.add(new_payment)
     db.commit()
     db.refresh(new_payment)

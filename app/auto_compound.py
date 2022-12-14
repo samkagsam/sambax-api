@@ -50,9 +50,10 @@ with Session.begin() as session:
             #print("hehe")
             #get the loan balance and compound it
             interest = 0.007*loan.loan_balance
-            new_loan_balance_figure = loan.loan_balance + interest
-            new_loan_balance = math.ceil(new_loan_balance_figure)
-            print(new_loan_balance_figure)
+            solid_interest = math.ceil(interest)
+            new_loan_balance = loan.loan_balance + solid_interest
+            #new_loan_balance = math.ceil(new_loan_balance_figure)
+            print(solid_interest)
             print(new_loan_balance)
 
             # update the loan balance
@@ -67,8 +68,18 @@ with Session.begin() as session:
             loan_query = session.query(models.Loan).filter(models.Loan.user_id == loan.user_id,
                                                       models.Loan.running == True)
             loan_query.update(thisdict, synchronize_session=False)
+            session.flush()
             #session.commit()
             #session.close()
+
+            # register compound
+            new_payment = models.Payment(user_id=loan.user_id, loan_id=loan.id, amount=solid_interest,
+                                         old_balance=loan.loan_balance, new_balance=new_loan_balance,
+                                         transaction_type="credit", made_by="auto")
+            session.add(new_payment)
+            #session.commit()
+            #session.refresh(new_payment)
+
             session.flush()
 
 

@@ -113,6 +113,8 @@ class Payment(Base):
     loan_id = Column(Integer, ForeignKey("loans.id", ondelete="CASCADE"), nullable=False)
     old_balance = Column(Integer, nullable=False, server_default='0')
     new_balance = Column(Integer, nullable=False, server_default='0')
+    transaction_type = Column(String, nullable=False, server_default='None')
+    made_by = Column(String, nullable=False, server_default='None')
     owner = relationship("Loan")
 
 
