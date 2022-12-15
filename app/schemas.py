@@ -378,7 +378,7 @@ class GroupLandingPage(BaseModel):
         orm_mode = True
 
 
-#determines the format of application sent back to admin after payee registration
+#determines the format of information sent back on group members
 class GroupMembers(BaseModel):
 
     first_name: str
@@ -389,6 +389,8 @@ class GroupMembers(BaseModel):
     class Config:
         orm_mode = True
 
+
+#VERSION CODE 6 STARTS HERE
 
 #determines the format of data sent about group members in Version Code 6
 class AllGroupMembers(BaseModel):
@@ -404,7 +406,7 @@ class AllGroupMembers(BaseModel):
 
 
 
-#determines the format of information sent back to user on seeking group requests
+#determines the format of information sent back to user on seeking group requests in Version Code 6
 class GroupRequestOut(BaseModel):
     request_id:str
     group_number: str
@@ -416,13 +418,13 @@ class GroupRequestOut(BaseModel):
         orm_mode = True
 
 
-#determines the format of information sent  to api on approving request
+#determines the format of information sent  to api on approving request in version code 6
 class ApprovalRequestIn(BaseModel):
     id:int
 
 
 
-#determines the format of information sent back to user on approving request
+#determines the format of information sent back to user on approving request in version code 6
 class ApprovalRequestOut(BaseModel):
     id:int
     group: int
@@ -440,7 +442,7 @@ class UserGroupsOut(BaseModel):
         orm_mode = True
 
 
-#determines the format of information sent back to a user about payment in Version Code 6
+#determines the format of information sent back to a user about loan statement in Version Code 6
 class LoanStatementOutCode6(BaseModel):
     id: int
     amount: int

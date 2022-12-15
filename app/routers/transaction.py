@@ -264,3 +264,11 @@ def create_deposit_by_admin(withdraw: schemas.AdminPayment, db: Session = Depend
 
     return new_withdraw
 
+
+
+#VERSION CODE 6 STARTS HERE
+#getting all transactions, made by a logged-in user
+@router.get("/normal_statement", response_model=List[schemas.NormalStatementOutCode6])
+def get_transaction_statement(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    transactions = db.query(models.Transaction).filter(models.Transaction.user_id == current_user.id).all()
+    return transactions
