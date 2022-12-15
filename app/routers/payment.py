@@ -269,3 +269,12 @@ def get_user_payments(phone_number_given: schemas.PhoneNumberRecover, db: Sessio
 
     payments = db.query(models.Payment).filter(models.Payment.user_id == current_user.id).all()
     return payments
+
+
+#VERSION CODE 6 STARTS HERE
+
+#getting all payments, made by a logged-in user in version code 6
+@router.get("/myloanstatement", response_model=List[schemas.LoanStatementOutCode6])
+def get_my_loan_statement(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    payments = db.query(models.Payment).filter(models.Payment.user_id == current_user.id).all()
+    return payments

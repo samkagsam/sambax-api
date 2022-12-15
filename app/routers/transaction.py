@@ -63,7 +63,8 @@ def create_deposit_by_user(deposit: schemas.TransactionIn, db: Session = Depends
     #new_deposit = models.Transaction(user_id=current_user.id, transaction_type="deposit",
    #                                  old_balance=old_account_balance, new_balance=new_account_balance, **deposit.dict())
     new_deposit = models.Transaction(user_id=current_user.id, transaction_type="deposit",
-                                     old_balance=old_account_balance, new_balance=new_account_balance, amount=0)
+                                     old_balance=old_account_balance, new_balance=new_account_balance, amount=0,
+                                     made_by="self")
     db.add(new_deposit)
     db.commit()
     db.refresh(new_deposit)
@@ -122,7 +123,7 @@ def create_withdraw_by_user(withdraw: schemas.TransactionIn, db: Session = Depen
     #                               old_balance=old_account_balance, new_balance=new_account_balance, **withdraw.dict())
     new_withdraw = models.Transaction(user_id=current_user.id, transaction_type="Withdraw",
                                       old_balance=old_account_balance, new_balance=new_account_balance,
-                                      amount=0)
+                                      amount=0, made_by="self")
     db.add(new_withdraw)
     db.commit()
     db.refresh(new_withdraw)

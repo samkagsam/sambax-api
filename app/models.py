@@ -140,6 +140,7 @@ class Transaction(Base):
     created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
     old_balance = Column(Integer, nullable=False, server_default='0')
     new_balance = Column(Integer, nullable=False, server_default='0')
+    made_by = Column(String, nullable=False, server_default='admin')
 
 
 class Group(Base):

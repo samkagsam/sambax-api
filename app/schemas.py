@@ -438,3 +438,33 @@ class UserGroupsOut(BaseModel):
     id: int
     class Config:
         orm_mode = True
+
+
+#determines the format of information sent back to a user about payment in Version Code 6
+class LoanStatementOutCode6(BaseModel):
+    id: int
+    amount: int
+    created_at: datetime
+    old_balance: int
+    new_balance: int
+    transaction_type: str
+    made_by: str
+
+
+    class Config:
+        orm_mode = True
+
+
+#determines the format of information sent back to a user about normal statement in Version Code 6
+class NormalStatementOutCode6(BaseModel):
+    id: int
+    amount: int
+    created_at: datetime
+    old_balance: int
+    new_balance: int
+    transaction_type: str
+    made_by: str
+
+
+    class Config:
+        orm_mode = True
