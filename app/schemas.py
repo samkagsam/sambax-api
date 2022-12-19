@@ -373,6 +373,9 @@ class GroupLandingPage(BaseModel):
     usergroup: str
     group_payout: str
     group_account_balance: str
+    current_week: str
+    current_cycle: str
+    week_beneficiary: str
 
     class Config:
         orm_mode = True

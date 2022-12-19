@@ -155,6 +155,7 @@ class Group(Base):
     cycle_change = Column(Integer, nullable=False, server_default='0')
     cycle = Column(Integer, nullable=False, server_default='0')
     week = Column(Integer, nullable=False, server_default='0')
+    identifier = Column(String, nullable=False, server_default='None')
 
 
 

@@ -6,6 +6,7 @@ from typing import Optional, List
 import requests
 from ..config import settings
 from datetime import datetime, timedelta
+import uuid
 
 
 router = APIRouter(
@@ -550,21 +551,32 @@ def get_group_members( db: Session = Depends(get_db), current_user: int = Depend
 def user_create_saving_group(group: schemas.GroupCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
 
     #first check whether the user is already a group admin
-    group_inquiry = db.query(models.Group).filter(models.Group.group_admin == current_user.id).first()
+    #group_inquiry = db.query(models.Group).filter(models.Group.group_admin == current_user.id).first()
 
-    if group_inquiry:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You already created a saving group")
+    #if group_inquiry:
+    #    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You already created a saving group")
 
+
+    #let us create a unique id for the new group to be created
+    unique_id = uuid.uuid4()
+
+    #print(unique_id)  # 👉️ 011963c3-7fa3-4963-8599-a302f9aefe7d
+    #print(type(unique_id))  # 👉️ <class 'uuid.UUID'>
+
+    unique_id_str = str(unique_id)
+    #print(unique_id_str)  # 👉️ 011963c3-7fa3-4963-8599-a302f9aefe7d
+    #print(type(unique_id_str))  # 👉️ <class 'str'>
 
     #create group
-    new_group = models.Group(group_admin=current_user.id, cycle=1, cycle_change=group.payout, week=1, **group.dict())
+    new_group = models.Group(group_admin=current_user.id, cycle=1, cycle_change=group.payout, week=1,
+                             identifier=unique_id_str, **group.dict())
     db.add(new_group)
     db.commit()
     db.refresh(new_group)
 
     #automatically add the creator as the first payee
     #first get the group just created
-    creator_group = db.query(models.Group).filter(models.Group.group_admin==current_user.id).first()
+    creator_group = db.query(models.Group).filter(models.Group.identifier==unique_id_str).first()
     creator_group_id = creator_group.id
 
     #add the creator as a payee
@@ -848,8 +860,25 @@ def specific_saving_group_landing(id_given:schemas.ApprovalRequestIn, db: Sessio
 
     group_payout = str(group_check.payout)
     group_account_balance = str(group_check.account_balance)
+    current_week = str(group_check.week)
+    current_cycle = str(group_check.cycle)
 
-    return {"usergroup": usergroup, "group_payout": group_payout, "group_account_balance": group_account_balance}
+    #let us get the beneficiary for this week
+    payee_inquiry = db.query(models.Payee).filter(models.Payee.group == id_given.id,
+                                                  models.Payee.week == group_check.week,
+                                                  models.Payee.approval_status == "approved",
+                                                  models.Payee.approval_count == 1).first()
+    payee_id = payee_inquiry.user_id
+
+    current_payee = db.query(models.User).filter(models.User.id == payee_id).first()
+    week_beneficiary = current_payee.first_name + " " + current_payee.last_name
+
+    return {"usergroup": usergroup,
+            "group_payout": group_payout,
+            "group_account_balance": group_account_balance,
+            "current_week": current_week,
+            "current_cycle": current_cycle,
+            "week_beneficiary": week_beneficiary}
 
 
 #getting specific group members in version code 6
