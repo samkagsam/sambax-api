@@ -331,10 +331,7 @@ class GroupPaymentIn(BaseModel):
     cycle: str
 
 
-#determines the format of payment information for group entered by a user in version code 6
-class NewGroupPaymentIn(BaseModel):
-    amount: int
-    group_id: int
+
 
 
 #determines the format of payment information for group inquired by a user
@@ -361,9 +358,7 @@ class GroupWithdraw(BaseModel):
     week: int
     cycle: str
 
-#determines the format of information sent sent by a user to make a withdraw in version code 6
-class NewGroupWithdraw(BaseModel):
-    group_id: int
+
 
 
 
@@ -473,3 +468,14 @@ class NormalStatementOutCode6(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+#determines the format of payment information for group entered by a user in version code 6
+class NewGroupPaymentIn(BaseModel):
+    amount: int
+    group_id: int
+
+
+#determines the format of information sent sent by a user to make a withdraw in version code 6
+class NewGroupWithdraw(BaseModel):
+    group_id: int

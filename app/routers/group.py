@@ -547,7 +547,7 @@ def get_group_members( db: Session = Depends(get_db), current_user: int = Depend
 
 
 #creating a group by user in version Code 6
-@router.post("/groups", status_code=status.HTTP_201_CREATED, response_model=schemas.PayeeOut)
+@router.post("/groups", status_code=status.HTTP_201_CREATED, response_model=schemas.GroupOut)
 def user_create_saving_group(group: schemas.GroupCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
 
     #first check whether the user is already a group admin
@@ -585,7 +585,7 @@ def user_create_saving_group(group: schemas.GroupCreate, db: Session = Depends(g
     db.commit()
     db.refresh(new_payee)
 
-    return new_payee
+    return new_group
 
 
 #creating a payee for a group by a user admin in version code 6
