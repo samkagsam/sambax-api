@@ -296,9 +296,7 @@ class PayeeCreate(BaseModel):
     cycle: str
 
 
-#determines the type of information received about a payee from a user admin
-class UserPayeeCreate(BaseModel):
-    phone_number: int
+
 
 
 
@@ -389,6 +387,12 @@ class GroupMembers(BaseModel):
 
 
 #VERSION CODE 6 STARTS HERE
+
+
+#determines the type of information received about a payee from a user admin
+class UserPayeeCreate(BaseModel):
+    group_id: int
+    phone_number: int
 
 #determines the format of data sent about group members in Version Code 6
 class AllGroupMembers(BaseModel):

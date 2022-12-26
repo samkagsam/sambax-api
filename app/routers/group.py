@@ -591,11 +591,11 @@ def user_create_saving_group(group: schemas.GroupCreate, db: Session = Depends(g
 #creating a payee for a group by a user admin in version code 6
 @router.post("/payees", status_code=status.HTTP_201_CREATED, response_model=schemas.PayeeOut)
 def user_create_group_payee(payee: schemas.UserPayeeCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
-    #first get the group where this user is an admin
-    user_group = db.query(models.Group).filter(models.Group.group_admin == current_user.id).first()
+    #first check whether user is an admin to this group
+    user_group = db.query(models.Group).filter(models.Group.id == payee.group_id, models.Group.group_admin == current_user.id).first()
 
     if not user_group:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"You are not admin to any saving group")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"You are not admin to this saving group")
 
     # get the id of intended payee
     intended_payee = db.query(models.User).filter(models.User.phone_number == payee.phone_number).first()
