@@ -272,3 +272,18 @@ def create_deposit_by_admin(withdraw: schemas.AdminPayment, db: Session = Depend
 def get_transaction_statement(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     transactions = db.query(models.Transaction).filter(models.Transaction.user_id == current_user.id).all()
     return transactions
+
+
+#getting total number of deposits, made by admin
+@router.get("/admin/total_user_deposits")
+def get_total_user_deposits(db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
+    users = db.query(models.User).all()
+    number_of_active_users = len(users)
+    sum_account_balance = 0
+
+    for user in users:
+        sum_account_balance += user.account_balance
+
+
+    #sum = loans.with_entities(func.sum(models.Loan.loan_payable)).scalar()
+    return number_of_active_users, sum_account_balance
