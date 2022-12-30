@@ -287,3 +287,13 @@ def get_total_user_deposits(db: Session = Depends(get_db), current_admin: int = 
 
     #sum = loans.with_entities(func.sum(models.Loan.loan_payable)).scalar()
     return number_of_active_users, sum_account_balance
+
+
+#getting user transaction statement, used by admin
+@router.post("/admin/normal_statement", response_model=List[schemas.NormalStatementOutCode6])
+def admin_get_transaction_statement(phone_number_given: schemas.PhoneNumberRecover, db: Session = Depends(get_db), current_admin: int = Depends(admin_oauth2.get_current_admin)):
+    # find the user
+    current_user = db.query(models.User).filter(models.User.phone_number == phone_number_given.phone_number).first()
+
+    transactions = db.query(models.Transaction).filter(models.Transaction.user_id == current_user.id).all()
+    return transactions
