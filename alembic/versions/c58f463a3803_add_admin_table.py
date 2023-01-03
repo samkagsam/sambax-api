@@ -29,11 +29,11 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('phone_number')
     )
-    op.drop_constraint(u'posts_users_fk', 'posts', type_='foreignkey')
-    op.drop_constraint(u'votes_post_id_fkey', 'votes', type_='foreignkey')
-    op.drop_constraint(u'votes_user_id_fkey', 'votes', type_='foreignkey')
-    op.drop_table('posts')
-    op.drop_table('votes')
+    #op.drop_constraint(u'posts_users_fk', 'posts', type_='foreignkey')
+    #op.drop_constraint(u'votes_post_id_fkey', 'votes', type_='foreignkey')
+    #op.drop_constraint(u'votes_user_id_fkey', 'votes', type_='foreignkey')
+    #op.drop_table('posts')
+    #op.drop_table('votes')
     # ### end Alembic commands ###
 
 

@@ -183,3 +183,38 @@ class GroupPayment(Base):
     week = Column(Integer, nullable=False, server_default='0')
     cycle = Column(String, nullable=False, server_default='None')
     transaction_type = Column(String, nullable=False, server_default='None')
+
+
+class LongTermGroup(Base):
+    __tablename__ = "long_term_groups"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    account_balance = Column(Integer, nullable=False, server_default='0')
+    created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
+    payout_date = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
+    group_admin = Column(Integer, nullable=False, server_default='0')
+    cycle = Column(Integer, nullable=False, server_default='0')
+    identifier = Column(String, nullable=False, server_default='None')
+
+
+class LongTermGroupMember(Base):
+    __tablename__ = "long_term_group_members"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    group_id = Column(Integer, nullable=False, server_default='0')
+    user_id = Column(Integer, nullable=False, server_default='0')
+    created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
+    approval_status = Column(String, nullable=False, server_default='None')
+    approval_count = Column(Integer, nullable=False, server_default='0')
+
+
+class LongTermGroupTransaction(Base):
+    __tablename__ = "long_term_group_transactions"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    amount = Column(Integer, nullable=False)
+    created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    group_id = Column(Integer, ForeignKey("groups.id", ondelete="CASCADE"), nullable=False)
+    cycle = Column(String, nullable=False, server_default='None')
+    transaction_type = Column(String, nullable=False, server_default='None')

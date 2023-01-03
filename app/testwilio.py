@@ -11,7 +11,7 @@ auth_token = settings.twilio_auth_token
 client = Client(account_sid, auth_token)
 
 message = client.messages.create(
-  body="Join Earth's mightiest heroes. Like yourself.",
+  body="Wololo, wololo.",
   from_="+13344713159",
   to="+256705579354"
 )
