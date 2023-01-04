@@ -11,8 +11,8 @@ auth_token = settings.twilio_auth_token
 client = Client(account_sid, auth_token)
 
 message = client.messages.create(
-  body="Wololo, wololo.",
-  from_="+13344713159",
+  body="Your verification code is 7836.",
+  from_="SAMBAX",
   to="+256705579354"
 )
 

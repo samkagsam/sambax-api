@@ -9,6 +9,8 @@ import random
 from random import randrange
 from ..config import settings
 from fastapi.security import OAuth2PasswordBearer
+from ..config import settings
+from twilio.rest import Client
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="user_signup")
@@ -33,22 +35,25 @@ def signup_user(user:schemas.UserCreate, db: Session = Depends(get_db)):
                                                          "password": user.password, "customer_image_url": user.customer_image_url,
                                                          "customer_id_url": user.customer_id_url})
     #add logic for getting usable phone number of a user
-    appendage = '256'
+    appendage = '+256'
     number_string = str(user.phone_number)
     usable_phone_number_string = appendage + number_string
     usable_phone_number = int(usable_phone_number_string)
 
-    #send OTP to user
-    #lets connect to box-uganda for messaging
-    url = "https://boxuganda.com/api.php"
-    data = {'user': f'{settings.box_uganda_username}', 'password': f'{settings.box_uganda_password}', 'sender': 'sambax',
-            'message': f'your Sambax OTP is {random_otp}',
-            'reciever': f'{usable_phone_number}'}
-    headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
-    test_response = requests.post(url, data=data, headers=headers)
-    if test_response.status_code == 200:
-        print("message success")
+    # send OTP to user using twilio
+    # Set environment variables for your credentials
+    # Read more at http://twil.io/secure
+    account_sid = settings.twilio_account_sid
+    auth_token = settings.twilio_auth_token
+    client = Client(account_sid, auth_token)
 
+    message = client.messages.create(
+        body=f"Your verification code is {random_otp}",
+        from_="SAMBAX",
+        to=usable_phone_number
+    )
+
+    print(message.sid)
 
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -167,22 +172,25 @@ def check_user_phone_number(user:schemas.PhoneNumberRecover, db: Session = Depen
                                                           "phone_number": user.phone_number
                                                          })
     #add logic for getting usable phone number of a user
-    appendage = '256'
+    appendage = '+256'
     number_string = str(user.phone_number)
     usable_phone_number_string = appendage + number_string
     usable_phone_number = int(usable_phone_number_string)
 
-    #send OTP to user
-    #lets connect to box-uganda for messaging
-    url = "https://boxuganda.com/api.php"
-    data = {'user': f'{settings.box_uganda_username}', 'password': f'{settings.box_uganda_password}', 'sender': 'sambax',
-            'message': f'your Sambax OTP is {random_otp}',
-            'reciever': f'{usable_phone_number}'}
-    headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
-    test_response = requests.post(url, data=data, headers=headers)
-    if test_response.status_code == 200:
-        print("message success")
+    # send OTP to user
+    # Set environment variables for your credentials
+    # Read more at http://twil.io/secure
+    account_sid = settings.twilio_account_sid
+    auth_token = settings.twilio_auth_token
+    client = Client(account_sid, auth_token)
 
+    message = client.messages.create(
+        body=f"Your verification code is {random_otp}",
+        from_="SAMBAX",
+        to=usable_phone_number
+    )
+
+    print(message.sid)
 
     return {"access_token": access_token, "token_type": "bearer"}
 

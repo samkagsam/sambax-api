@@ -483,3 +483,41 @@ class NewGroupPaymentIn(BaseModel):
 #determines the format of information sent sent by a user to make a withdraw in version code 6
 class NewGroupWithdraw(BaseModel):
     group_id: int
+
+
+
+#VERSION CODE 7 STARTS HERE
+#determines the type of information received about a group
+class LongTermGroupCreate(BaseModel):
+    period: int
+
+
+#determines the format of information sent back after long term group registration in version code 7
+class LongTermGroupOut(BaseModel):
+    id: int
+    payout_date: datetime
+
+    class Config:
+        orm_mode = True
+
+
+#determines the format of information sent back after long term member registration in Version code 7
+class LongTermGroupMemberOut(BaseModel):
+    id: int
+    group_id: int
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+#determines the format of information sent back to user on approving long term group request in version code 7
+class LongTermGroupApprovalRequestOut(BaseModel):
+    id:int
+    group_id: int
+    approval_status: str
+    approval_count: int
+
+
+    class Config:
+        orm_mode = True

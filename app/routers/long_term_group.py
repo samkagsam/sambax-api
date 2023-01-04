@@ -18,14 +18,13 @@ router = APIRouter(
 
 
 # creating a long term group by user in version Code 7
-@router.post("/long_term_groups", status_code=status.HTTP_201_CREATED, response_model=schemas.GroupOut)
-def user_create_long_term_saving_group(group: schemas.GroupCreate, db: Session = Depends(get_db),
+@router.post("/long_term_groups", status_code=status.HTTP_201_CREATED, response_model=schemas.LongTermGroupOut)
+def user_create_long_term_saving_group(group: schemas.LongTermGroupCreate, db: Session = Depends(get_db),
                              current_user: int = Depends(oauth2.get_current_user)):
-    # first check whether the user is already a group admin
-    # group_inquiry = db.query(models.Group).filter(models.Group.group_admin == current_user.id).first()
 
-    # if group_inquiry:
-    #    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You already created a saving group")
+    #let us limit the period to 12 months
+    if group.period > 12:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Maximum period to fix your group savings is 12 months")
 
     # let us create a unique id for the new group to be created
     unique_id = uuid.uuid4()
@@ -37,20 +36,28 @@ def user_create_long_term_saving_group(group: schemas.GroupCreate, db: Session =
     # print(unique_id_str)  # 👉️ 011963c3-7fa3-4963-8599-a302f9aefe7d
     # print(type(unique_id_str))  # 👉️ <class 'str'>
 
+    #let us get payout date for this group
+    payout_date = datetime.now() + timedelta(days=30*group.period)
+    thisdict = {
+        "payout_date": "Ford"
+
+    }
+    thisdict["payout_date"] = f"{payout_date}"
+
     # create group
-    new_group = models.Group(group_admin=current_user.id, cycle=1, cycle_change=group.payout, week=1,
-                             identifier=unique_id_str, **group.dict())
+    new_group = models.LongTermGroup(group_admin=current_user.id, cycle=1,
+                             identifier=unique_id_str, **thisdict)
     db.add(new_group)
     db.commit()
     db.refresh(new_group)
 
-    # automatically add the creator as the first payee
+    # automatically add the creator as the first group member
     # first get the group just created
-    creator_group = db.query(models.Group).filter(models.Group.identifier == unique_id_str).first()
+    creator_group = db.query(models.LongTermGroup).filter(models.LongTermGroup.identifier == unique_id_str).first()
     creator_group_id = creator_group.id
 
     # add the creator as a payee
-    new_payee = models.Payee(week=1, group=creator_group_id, user_id=current_user.id, cycle="A",
+    new_payee = models.LongTermGroupMember( group_id=creator_group_id, user_id=current_user.id,
                              approval_status="approved", approval_count=1)
     db.add(new_payee)
     db.commit()
@@ -59,13 +66,13 @@ def user_create_long_term_saving_group(group: schemas.GroupCreate, db: Session =
     return new_group
 
 
-# creating a payee for a group by a user admin in version code 6
-@router.post("/payees", status_code=status.HTTP_201_CREATED, response_model=schemas.PayeeOut)
-def user_create_group_payee(payee: schemas.UserPayeeCreate, db: Session = Depends(get_db),
+# creating a group member for a long term group by a user admin in version code 7
+@router.post("/add_long_term_group_member", status_code=status.HTTP_201_CREATED, response_model=schemas.LongTermGroupMemberOut)
+def user_add_long_term_group_member(payee: schemas.UserPayeeCreate, db: Session = Depends(get_db),
                             current_user: int = Depends(oauth2.get_current_user)):
     # first check whether user is an admin to this group
-    user_group = db.query(models.Group).filter(models.Group.id == payee.group_id,
-                                               models.Group.group_admin == current_user.id).first()
+    user_group = db.query(models.LongTermGroup).filter(models.LongTermGroup.id == payee.group_id,
+                                               models.LongTermGroup.group_admin == current_user.id).first()
 
     if not user_group:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"You are not admin to this saving group")
@@ -77,25 +84,25 @@ def user_create_group_payee(payee: schemas.UserPayeeCreate, db: Session = Depend
                             detail=f"Phone number is not registered with Sambax Finance")
 
     # first check whether this intended payee is already an approved member of this group
-    payee_inquiry = db.query(models.Payee).filter(models.Payee.user_id == intended_payee.id,
-                                                  models.Payee.group == user_group.id,
-                                                  models.Payee.approval_status == "approved",
-                                                  models.Payee.approval_count == 1).first()
+    payee_inquiry = db.query(models.LongTermGroupMember).filter(models.LongTermGroupMember.user_id == intended_payee.id,
+                                                  models.LongTermGroupMember.group_id == user_group.id,
+                                                  models.LongTermGroupMember.approval_status == "approved",
+                                                  models.LongTermGroupMember.approval_count == 1).first()
 
     if payee_inquiry:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"user already belongs to this saving group")
 
     # now check whether the intended payee has already received a group join request
-    payee_request = db.query(models.Payee).filter(models.Payee.user_id == intended_payee.id,
-                                                  models.Payee.group == user_group.id,
-                                                  models.Payee.approval_status == "disapproved",
-                                                  models.Payee.approval_count == 0).first()
+    payee_request = db.query(models.LongTermGroupMember).filter(models.LongTermGroupMember.user_id == intended_payee.id,
+                                                  models.LongTermGroupMember.group_id == user_group.id,
+                                                  models.LongTermGroupMember.approval_status == "disapproved",
+                                                  models.LongTermGroupMember.approval_count == 0).first()
     if payee_request:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail=f"user has already received a group join request for this group")
 
     # new_payee = models.Payee(**thisdict)
-    new_payee = models.Payee(week=0, group=user_group.id, user_id=intended_payee.id, cycle="A",
+    new_payee = models.LongTermGroupMember( group_id=user_group.id, user_id=intended_payee.id,
                              approval_status="disapproved")
     db.add(new_payee)
     db.commit()
@@ -103,32 +110,25 @@ def user_create_group_payee(payee: schemas.UserPayeeCreate, db: Session = Depend
     return new_payee
 
 
-# approving group request by user in version code 6
-@router.post("/approve_request", status_code=status.HTTP_201_CREATED, response_model=schemas.ApprovalRequestOut)
-def user_approve_group_request(id_given: schemas.ApprovalRequestIn, db: Session = Depends(get_db),
+# approving group request by user in version code 7
+@router.post("/approve_long_term_group_request", status_code=status.HTTP_201_CREATED, response_model=schemas.LongTermGroupApprovalRequestOut)
+def user_approve_long_term_group_request(id_given: schemas.ApprovalRequestIn, db: Session = Depends(get_db),
                                current_user: int = Depends(oauth2.get_current_user)):
     # first check for the request
-    request_inquiry = db.query(models.Payee).filter(models.Payee.id == id_given.id).first()
+    request_inquiry = db.query(models.LongTermGroupMember).filter(models.LongTermGroupMember.id == id_given.id).first()
 
     if not request_inquiry:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail=f"You have not received a request to join a group")
 
-    repeat_check = db.query(models.Payee).filter(models.Payee.id == id_given.id,
-                                                 models.Payee.approval_count == 1).first()
+    repeat_check = db.query(models.LongTermGroupMember).filter(models.LongTermGroupMember.id == id_given.id,
+                                                 models.LongTermGroupMember.approval_count == 1).first()
 
     if repeat_check:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail=f"You have already approved the request")
 
-    # let us check whether there's already someone approved for the given week in the given group
-    # week_inquiry = db.query(models.Payee).filter(models.Payee.group==request_inquiry.group,
-    #                                             models.Payee.week==request_inquiry.week,
-    #                                             models.Payee.approval_status=="approved",
-    #                                             models.Payee.approval_count==1).first()
-    # if week_inquiry:
-    #    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-    #                        detail=f"There's already someone assigned to that week")
+
 
     # let us now approve the request, use a dictionary to update the request status
     # use a random dictionary to update the loan balance
@@ -143,16 +143,16 @@ def user_approve_group_request(id_given: schemas.ApprovalRequestIn, db: Session 
     thisdict["approval_count"] = 1
 
     # perform the request approval
-    payee_query = db.query(models.Payee).filter(models.Payee.id == id_given.id)
+    payee_query = db.query(models.LongTermGroupMember).filter(models.LongTermGroupMember.id == id_given.id)
     payee_query.update(thisdict, synchronize_session=False)
     db.commit()
 
-    # now let us update cycle change
-    # cycle_change = group_payout x no_of_group_members
+
+
     # let us first count the group members
-    group_members = db.query(models.Payee).filter(models.Payee.group == request_inquiry.group,
-                                                  models.Payee.approval_status == "approved",
-                                                  models.Payee.approval_count == 1).all()
+    group_members = db.query(models.LongTermGroupMember).filter(models.LongTermGroupMember.group_id == request_inquiry.group_id,
+                                                  models.LongTermGroupMember.approval_status == "approved",
+                                                  models.LongTermGroupMember.approval_count == 1).all()
     number_of_members = 0
     member_list = []
     for group_member in group_members:
@@ -161,40 +161,7 @@ def user_approve_group_request(id_given: schemas.ApprovalRequestIn, db: Session 
         member_list.append(member)
 
     print(member_list)
-    position_no = member_list.index(current_user.id)
-    week_no = position_no + 1
-    print(week_no)
 
-    # let us set the week number for this payee
-    weekdict = {
-
-        "week": 0
-    }
-
-    weekdict["week"] = week_no
-    # perform the week update
-    week_query = db.query(models.Payee).filter(models.Payee.id == id_given.id)
-    week_query.update(weekdict, synchronize_session=False)
-    db.commit()
-
-    # let us find the payout for this group
-    group_look = db.query(models.Group).filter(models.Group.id == request_inquiry.group).first()
-    current_group_payout = group_look.payout
-
-    new_cycle_change = current_group_payout * number_of_members
-
-    # let us update cycle change with new value using dictionary
-    thatdict = {
-
-        "cycle_change": 0
-    }
-
-    thatdict["cycle_change"] = new_cycle_change
-
-    # update the cycle change of the group
-    group_query = db.query(models.Group).filter(models.Group.id == request_inquiry.group)
-    group_query.update(thatdict, synchronize_session=False)
-    db.commit()
 
     # let us message all the group members about the new member who has joined
     for group_member in group_members:
@@ -210,7 +177,7 @@ def user_approve_group_request(id_given: schemas.ApprovalRequestIn, db: Session 
         url = "https://boxuganda.com/api.php"
         data = {'user': f'{settings.box_uganda_username}', 'password': f'{settings.box_uganda_password}',
                 'sender': 'sambax',
-                'message': f'Hello, {user.first_name},{current_user.first_name}, 0{current_user.phone_number} has joined saving group{request_inquiry.group} at Sambax Finance Ltd.',
+                'message': f'Hello, {user.first_name},{current_user.first_name}, 0{current_user.phone_number} has joined saving group{request_inquiry.group_id} at Sambax Finance Ltd.',
                 'reciever': f'{usable_phone_number2}'}
         headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
         test_response = requests.post(url, data=data, headers=headers)
@@ -220,27 +187,27 @@ def user_approve_group_request(id_given: schemas.ApprovalRequestIn, db: Session 
     return request_inquiry
 
 
-# disapproving group join request in version code 6
-@router.post("/disapprove_request", status_code=status.HTTP_201_CREATED, response_model=schemas.ApprovalRequestOut)
-def user_disapprove_group_request(id_given: schemas.ApprovalRequestIn, db: Session = Depends(get_db),
+# disapproving long term group join request in version code 7
+@router.post("/disapprove_long_term_group_request", status_code=status.HTTP_201_CREATED, response_model=schemas.LongTermGroupApprovalRequestOut)
+def user_disapprove_long_term_group_request(id_given: schemas.ApprovalRequestIn, db: Session = Depends(get_db),
                                   current_user: int = Depends(oauth2.get_current_user)):
     # first check for the request
-    request_inquiry = db.query(models.Payee).filter(models.Payee.id == id_given.id).first()
+    request_inquiry = db.query(models.LongTermGroupMember).filter(models.LongTermGroupMember.id == id_given.id).first()
 
     if not request_inquiry:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail=f"You have not received a request to join a group")
 
-    repeat_check = db.query(models.Payee).filter(models.Payee.id == id_given.id,
-                                                 models.Payee.approval_count == 1).first()
+    repeat_check = db.query(models.LongTermGroupMember).filter(models.LongTermGroupMember.id == id_given.id,
+                                                 models.LongTermGroupMember.approval_count == 1).first()
 
     if repeat_check:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail=f"You have already disapproved the request")
 
-    # let us now approve the request, use a dictionary to update the request status
-    # use a random dictionary to update the loan balance
-    # "approval_count": 0
+    # let us now disapprove the request, use a dictionary to update the request status
+    # use a random dictionary to update the approval_status and approval count
+
     thisdict = {
 
         "approval_status": "yyy",
@@ -251,27 +218,27 @@ def user_disapprove_group_request(id_given: schemas.ApprovalRequestIn, db: Sessi
     thisdict["approval_count"] = 1
 
     # perform the request approval
-    payee_query = db.query(models.Payee).filter(models.Payee.id == id_given.id)
+    payee_query = db.query(models.LongTermGroupMember).filter(models.LongTermGroupMember.id == id_given.id)
     payee_query.update(thisdict, synchronize_session=False)
     db.commit()
 
     return request_inquiry
 
 
-# retrieving all group join requests by a logged-in user in version code 6
-@router.get("/group_requests", response_model=List[schemas.GroupRequestOut])
-def get_group_requests(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+# retrieving all long term group join requests by a logged-in user in version code 7
+@router.get("/long_term_group_requests", response_model=List[schemas.GroupRequestOut])
+def get_long_term_group_requests(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     # let us check for requests
-    group_requests = db.query(models.Payee).filter(models.Payee.user_id == current_user.id,
-                                                   models.Payee.approval_status == "disapproved",
-                                                   models.Payee.approval_count == 0).all()
+    group_requests = db.query(models.LongTermGroupMember).filter(models.LongTermGroupMember.user_id == current_user.id,
+                                                   models.LongTermGroupMember.approval_status == "disapproved",
+                                                   models.LongTermGroupMember.approval_count == 0).all()
     if not group_requests:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You have no group join request")
 
     request_list = []
 
     for group_request in group_requests:
-        given_group = db.query(models.Group).filter(models.Group.id == group_request.group).first()
+        given_group = db.query(models.LongTermGroup).filter(models.LongTermGroup.id == group_request.group_id).first()
         group_admin = given_group.group_admin
 
         # lets find the credentials of the group admin
@@ -299,8 +266,8 @@ def get_group_requests(db: Session = Depends(get_db), current_user: int = Depend
     return request_list
 
 
-# retrieving all groups by a logged-in user in version code 6
-@router.get("/groups_user_belongs_to", response_model=List[schemas.UserGroupsOut])
+# retrieving all long term groups by a logged-in user in version code 7
+@router.get("/long_term_groups_user_belongs_to", response_model=List[schemas.UserGroupsOut])
 def get_groups_user_belongs_to(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     # let us check for requests
     group_checks = db.query(models.Payee).filter(models.Payee.user_id == current_user.id,
