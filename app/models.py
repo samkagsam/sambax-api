@@ -218,3 +218,6 @@ class LongTermGroupTransaction(Base):
     group_id = Column(Integer, ForeignKey("long_term_groups.id", ondelete="CASCADE"), nullable=False)
     cycle = Column(String, nullable=False, server_default='None')
     transaction_type = Column(String, nullable=False, server_default='None')
+    old_balance = Column(Integer, nullable=False, server_default='0')
+    new_balance = Column(Integer, nullable=False, server_default='0')
+    made_by = Column(String, nullable=False, server_default='self')
