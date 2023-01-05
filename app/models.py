@@ -215,6 +215,6 @@ class LongTermGroupTransaction(Base):
     amount = Column(Integer, nullable=False)
     created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    group_id = Column(Integer, ForeignKey("groups.id", ondelete="CASCADE"), nullable=False)
+    group_id = Column(Integer, ForeignKey("long_term_groups.id", ondelete="CASCADE"), nullable=False)
     cycle = Column(String, nullable=False, server_default='None')
     transaction_type = Column(String, nullable=False, server_default='None')

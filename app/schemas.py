@@ -518,6 +518,26 @@ class LongTermGroupApprovalRequestOut(BaseModel):
     approval_status: str
     approval_count: int
 
+    class Config:
+        orm_mode = True
+
+
+#determines the format of information sent back to user on landing in version code 7
+class LongTermGroupLandingPage(BaseModel):
+    usergroup: str
+    group_account_balance: str
+    current_cycle: str
+    payout_date: str
+
+    class Config:
+        orm_mode = True
+
+
+#determines the format of information sent back to user on long term group members in version code 7
+class SeeLongTermGroupMembers(BaseModel):
+    first_name: str
+    last_name: str
+    phone_number: str
 
     class Config:
         orm_mode = True
