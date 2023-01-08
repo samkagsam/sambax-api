@@ -12,7 +12,7 @@ import time
 from . import models, schemas, utils
 from .database import engine, get_db
 from sqlalchemy.orm import Session
-from .routers import user, biodata, loan, application, payment, auth, admin_auth, transaction, group, long_term_group
+from .routers import user, biodata, loan, application, payment, auth, admin_auth, transaction, group, long_term_group, fixed_deposit
 from .config import Settings
 
 
@@ -47,6 +47,7 @@ app.include_router(admin_auth.router)
 app.include_router(transaction.router)
 app.include_router(group.router)
 app.include_router(long_term_group.router)
+app.include_router(fixed_deposit.router)
 
 
 

@@ -541,3 +541,35 @@ class SeeLongTermGroupMembers(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+#determines the format of information sent sent back to a user about long term group statement in version code 7
+class LongTermGroupPaymentsInquiryOut(BaseModel):
+    amount: str
+    old_balance: str
+    new_balance: str
+    transaction_type: str
+    first_name: str
+    last_name: str
+    phone_number: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+#determines the format of information sent to server about payout update
+class UpdatePayout(BaseModel):
+    group_id: int
+    period: int
+
+
+#determines the format of information sent back to user about total deposits in long term group in version code 7
+class GetMyTotalDeposits(BaseModel):
+
+    total_deposits: str
+
+    class Config:
+        orm_mode = True
+
+

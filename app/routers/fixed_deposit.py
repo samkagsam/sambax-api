@@ -10,7 +10,7 @@ import uuid
 
 
 router = APIRouter(
-    tags=["Long Term Groups"]
+    tags=["Fixed Deposit Accounts"]
 )
 
 

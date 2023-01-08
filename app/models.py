@@ -221,3 +221,29 @@ class LongTermGroupTransaction(Base):
     old_balance = Column(Integer, nullable=False, server_default='0')
     new_balance = Column(Integer, nullable=False, server_default='0')
     made_by = Column(String, nullable=False, server_default='self')
+
+
+class FixedDepositAccount(Base):
+    __tablename__ = "fixed_deposit_accounts"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    account_balance = Column(Integer, nullable=False, server_default='0')
+    created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
+    payout_date = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    cycle = Column(Integer, nullable=False, server_default='0')
+
+
+class FixedDepositTransaction(Base):
+    __tablename__ = "fixed_deposit_transactions"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    amount = Column(Integer, nullable=False)
+    created_at = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    account_id = Column(Integer, ForeignKey("fixed_deposit_accounts.id", ondelete="CASCADE"), nullable=False)
+    cycle = Column(Integer, nullable=False, server_default='0')
+    transaction_type = Column(String, nullable=False, server_default='None')
+    old_balance = Column(Integer, nullable=False, server_default='0')
+    new_balance = Column(Integer, nullable=False, server_default='0')
+    made_by = Column(String, nullable=False, server_default='self')
