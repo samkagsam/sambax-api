@@ -573,3 +573,23 @@ class GetMyTotalDeposits(BaseModel):
         orm_mode = True
 
 
+#determines the format of information sent back to user about a fixed deposit account in version code 7
+class FixedDepositLandingPage(BaseModel):
+
+    account_balance: str
+    payout_date: datetime
+
+    class Config:
+        orm_mode = True
+
+
+#determines the format of payment information for long term group entered by admin for a user in version code 7
+class AdminNewGroupPaymentIn(BaseModel):
+    phone_number: int
+    amount: int
+    group_id: int
+
+
+
+
+

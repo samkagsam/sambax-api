@@ -16,18 +16,6 @@ router = APIRouter(
 @router.post("/deposits", status_code=status.HTTP_201_CREATED, response_model=schemas.TransactionOut)
 def create_deposit_by_user(deposit: schemas.TransactionIn, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
 
-    #check whether user has a running loan
-    #current_loan = db.query(models.Loan).filter(models.Loan.user_id == current_user.id, models.Loan.running == True).first()
-
-    #if not current_loan:
-        #raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"you have no active loan to pay for")
-
-    #let us not deduct more money than the loan current loan balance
-    #money_to_pay_dict = payment.dict()
-    #money_to_pay = money_to_pay_dict["amount"]
-    #if money_to_pay > current_loan.loan_balance:
-        #raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"the amount you are trying to pay is more than your loan balance")
-
     #add logic for collecting deposit from a user
     appendage = '256'
     number_string = str(current_user.phone_number)
@@ -297,3 +285,85 @@ def admin_get_transaction_statement(phone_number_given: schemas.PhoneNumberRecov
 
     transactions = db.query(models.Transaction).filter(models.Transaction.user_id == current_user.id).all()
     return transactions
+
+
+
+########VERSION CODE 7 STARTS HERE#########
+
+
+#making inbound transfers
+@router.post("/user_transfer_money", status_code=status.HTTP_201_CREATED, response_model=schemas.TransactionOut)
+def user_transfer_money(transfer: schemas.AdminPayment, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+
+    # check the transfer amount and make sure it's not more than the user's account balance
+    received_transfer = transfer.amount
+    current_account_balance = current_user.account_balance
+
+    if received_transfer > current_account_balance:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You have less money to transfer")
+
+    # find the user
+    recipient = db.query(models.User).filter(models.User.phone_number == transfer.phone_number).first()
+
+    if not recipient:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"user with that phone number was not found")
+
+    # now let us perform the transfer of funds
+    recipient_old_balance = recipient.account_balance
+    print(recipient_old_balance)
+    recipient_new_balance = recipient_old_balance + received_transfer
+    print(recipient_new_balance)
+
+    #add logic for collecting deposit from a user
+    appendage = '256'
+    number_string = str(current_user.phone_number)
+    usable_phone_number_string = appendage + number_string
+    usable_phone_number = int(usable_phone_number_string)
+
+
+
+    #get old account balance
+    old_account_balance = current_user.account_balance
+
+    #get new account balance
+    transferdict = transfer.dict()
+    received_transfer = transferdict["amount"]
+    #let me try to protect our system until mtn gives us access to their api
+    #received_deposit = 0
+    new_account_balance = current_user.account_balance + received_transfer
+
+    # use a random dictionary to update the loan balance
+    thisdict = {
+
+        "account_balance": 1964
+    }
+
+    thisdict["account_balance"] = new_account_balance
+
+    #update the account balance of the user
+    account_query = db.query(models.User).filter(models.User.id == current_user.id)
+    account_query.update(thisdict, synchronize_session=False)
+    db.commit()
+
+    # register deposit
+    #new_deposit = models.Transaction(user_id=current_user.id, transaction_type="deposit",
+   #                                  old_balance=old_account_balance, new_balance=new_account_balance, **deposit.dict())
+    new_deposit = models.Transaction(user_id=current_user.id, transaction_type="deposit",
+                                     old_balance=old_account_balance, new_balance=new_account_balance, amount=0,
+                                     made_by="self")
+    db.add(new_deposit)
+    db.commit()
+    db.refresh(new_deposit)
+
+    #send message to user about balance update
+    #lets connect to box-uganda for messaging
+    url = "https://boxuganda.com/api.php"
+    data = {'user': f'{settings.box_uganda_username}', 'password': f'{settings.box_uganda_password}', 'sender': 'sambax',
+            'message': f'Hello {current_user.first_name}, you have deposited UgX{received_deposit} with Sambax Finance Ltd.Your new Account balance is UgX{new_account_balance}',
+            'reciever': f'{usable_phone_number}'}
+    headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+    test_response = requests.post(url, data=data, headers=headers)
+    if test_response.status_code == 200:
+        print("message success")
+
+    return new_deposit

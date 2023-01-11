@@ -804,3 +804,114 @@ def my_total_deposits_in_long_term_group(group_given: schemas.NewGroupWithdraw, 
 
 
     return my_total_deposit_dict
+
+
+# creating a long term group payment by admin for a user in version code 7
+@router.post("/admin/user_long_term_group_payments", status_code=status.HTTP_201_CREATED, response_model=schemas.PaymentOut)
+def admin_make_long_term_group_payment_by_user(payment: schemas.AdminNewGroupPaymentIn, db: Session = Depends(get_db),
+                               current_admin: int = Depends(admin_oauth2.get_current_admin)):
+    # find the user
+    current_user = db.query(models.User).filter(models.User.phone_number == payment.phone_number).first()
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"user with that phone number was not found")
+
+    # check for the group
+    group_check = db.query(models.LongTermGroup).filter(models.LongTermGroup.id == payment.group_id).first()
+
+    if not group_check:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"saving group does not exist")
+
+    # check whether user belongs to this group
+    current_payee = db.query(models.LongTermGroupMember).filter(models.LongTermGroupMember.user_id == current_user.id,
+                                                  models.LongTermGroupMember.group_id == payment.group_id,
+                                                  models.LongTermGroupMember.approval_status == "approved",
+                                                  models.LongTermGroupMember.approval_count == 1).first()
+
+    if not current_payee:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"user does not belong to this saving group")
+
+    # let's check whether payout date has matured. If payout date is matured, do not allow deposits
+    format_string = "%Y-%m-%d %H:%M:%S.%f"
+    expiry_date_string = str(group_check.payout_date)
+    expiry_date_object = datetime.strptime(expiry_date_string, format_string)
+    now_string = str(datetime.now())
+    now = datetime.strptime(now_string, format_string)
+    # maturity_object = now-create_date
+    # loan_maturity = maturity_object.days
+
+    if now > expiry_date_object:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail=f"deposits not allowed. Payout date was reached")
+
+
+    # add logic for collecting payment from a user
+    appendage = '256'
+    number_string = str(current_user.phone_number)
+    usable_phone_number_string = appendage + number_string
+    usable_phone_number = int(usable_phone_number_string)
+
+
+
+    # get old group balance
+    current_group_inquiry = db.query(models.LongTermGroup).filter(models.LongTermGroup.id == payment.group_id).first()
+    old_group_balance = current_group_inquiry.account_balance
+
+    # get new group balance
+    paymentdict = payment.dict()
+    received_payment = paymentdict["amount"]
+    new_group_balance = old_group_balance + received_payment
+
+    # register payment
+    new_payment = models.LongTermGroupTransaction(user_id=current_user.id, group_id=payment.group_id,
+                                                  amount=payment.amount,
+                                                  cycle=group_check.cycle, transaction_type="deposit",
+                                                  old_balance=old_group_balance, new_balance=new_group_balance,
+                                                  made_by="admin")
+
+    db.add(new_payment)
+    db.commit()
+    db.refresh(new_payment)
+
+    # use a random dictionary to update the loan balance
+    thisdict = {
+
+        "account_balance": 1964
+    }
+
+    thisdict["account_balance"] = new_group_balance
+
+    # update the accout balance of the group
+    group_query = db.query(models.LongTermGroup).filter(models.LongTermGroup.id == current_payee.group_id)
+    group_query.update(thisdict, synchronize_session=False)
+    db.commit()
+
+    # get the other members of the group and message them
+    members = db.query(models.LongTermGroupMember).filter(models.LongTermGroupMember.id == current_payee.group_id,
+                                            models.LongTermGroupMember.approval_status == "approved",
+                                            models.LongTermGroupMember.approval_count == 1).all()
+
+    if not members:
+        print("there are no results")
+
+    for member in members:
+        user = db.query(models.User).filter(models.User.id == member.user_id).first()
+
+        # send message to user about balance update
+        appendage2 = '256'
+        number_string2 = str(user.phone_number)
+        usable_phone_number_string2 = appendage2 + number_string2
+        usable_phone_number2 = int(usable_phone_number_string2)
+
+        # lets connect to box-uganda for messaging
+        url = "https://boxuganda.com/api.php"
+        data = {'user': f'{settings.box_uganda_username}', 'password': f'{settings.box_uganda_password}',
+                'sender': 'sambax',
+                'message': f'Hello, {user.first_name},{current_user.first_name} has paid Sambax Finance Ltd UgX{received_payment} for group{payment.group_id} savings.Your new group balance UgX{new_group_balance}.',
+                'reciever': f'{usable_phone_number2}'}
+        headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+        test_response = requests.post(url, data=data, headers=headers)
+        if test_response.status_code == 200:
+            print("message success")
+
+    return new_payment
+
